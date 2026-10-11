@@ -1,44 +1,211 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { createRoot } from 'react-dom/client';
+import React, {useEffect, useMemo, useState} from 'react';
+import {createRoot} from 'react-dom/client';
+import {BroadcastStage} from './BroadcastStage';
+import type {Audience, Replay, Story} from './types';
+import {clock} from './types';
 import './style.css';
 
-type Position={x:number;y:number};
-type Event={id:string;second:number;team:'home'|'away';kind:string;player:string;position:Position;description:string};
-type Insight={id:string;second:number;title:string;explanation:string;evidence_event_ids:string[];metric_value:number;kind:'goal'|'tactical_shift';team:'home'|'away'|null};
-type TeamMetrics={actions:number;regains:number;high_regains:number;pass_attempts:number;pass_completed:number;pass_accuracy_pct:number|null;shots:number;goals:number};
-type Snapshot={second:number;home:TeamMetrics;away:TeamMetrics};
-type Replay={synthetic:boolean;duration_seconds:number;home_name:string;away_name:string;home_score:number;away_score:number;events:Event[];insights:Insight[];snapshots:Snapshot[]};
-type Audience='fan'|'analyst'|'broadcast';
-type StageTrace={stage:string;status:string;detail:string;evidence_event_ids:string[]};
-type Story={insight_id:string;audience:Audience;headline:string;narration:string;angle:string;verified:boolean;source:'deterministic'|'foundry_local'|'fallback';framework:string;trace:StageTrace[];evidence_event_ids:string[]};
-const fmt=(seconds:number)=>String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');
+const API='/api/matches/demo';
 function App(){
- const [audience,setAudience]=useState<Audience>('fan');const [story,setStory]=useState<Story|null>(null);const [storyError,setStoryError]=useState('');const [storyLoading,setStoryLoading]=useState(false);
- const [match,setMatch]=useState<Replay|null>(null); const [error,setError]=useState(''); const [time,setTime]=useState(0); const [playing,setPlaying]=useState(false); const [speed,setSpeed]=useState(30);
- useEffect(()=>{fetch('/api/matches/demo').then(r=>{if(!r.ok)throw Error('API error '+r.status);return r.json()}).then(setMatch).catch(e=>setError(String(e)))},[]);
- useEffect(()=>{if(!playing||!match)return;const timer=window.setInterval(()=>setTime(t=>Math.min(match.duration_seconds,t+speed)),1000);return()=>window.clearInterval(timer)},[playing,match,speed]);
- useEffect(()=>{if(match&&time>=match.duration_seconds)setPlaying(false)},[time,match]);
- const current=useMemo(()=>match?.events.filter(e=>e.second<=time)??[],[match,time]);
- const last=current.slice(-1)[0]; const score={home:current.filter(e=>e.team==='home'&&e.kind==='goal').length,away:current.filter(e=>e.team==='away'&&e.kind==='goal').length};
- const insights=match?.insights.filter(i=>i.second<=time)??[];const active=insights[insights.length-1];const availableSnapshots=match?.snapshots.filter(s=>s.second<=time)??[];const snapshot=availableSnapshots[availableSnapshots.length-1];
- useEffect(()=>{if(!active||!match){setStory(null);setStoryError('');return}
-  let cancelled=false;const controller=new AbortController();setStoryLoading(true);setStory(null);setStoryError('');
-  fetch('/api/matches/demo/story?seed=7&insight_id='+encodeURIComponent(active.id)+'&audience='+audience,{signal:controller.signal})
-  .then(r=>{if(!r.ok)throw new Error('Agent workflow request failed: '+r.status);return r.json()})
-  .then((data:Story)=>{if(!cancelled)setStory(data)})
-  .catch(e=>{if(!cancelled)setStoryError(String(e))})
-  .finally(()=>{if(!cancelled)setStoryLoading(false)});
-  return()=>{cancelled=true;controller.abort()}
- },[active?.id,audience,match]);
- if(error)return <main className="error"><h1>Backend unavailable</h1><p>{error}</p><p>Start FastAPI on port 8000, then refresh.</p></main>;
- if(!match)return <main className="error"><h1>Loading synthetic match…</h1></main>;
- return <main className="shell"><header><div className="brand"><span className="mark">M</span><div><strong>MATCHSHIFT <span>AI</span></strong><small>INTELLIGENT MATCH STUDIO</small></div></div><div className="topright"><span className="dot"/> SYNTHETIC LIVE REPLAY <span className="beta">AGENT WORKFLOW · V0.3</span></div></header>
- <section className="intro"><div><div className="eyebrow">THE GAME BEHIND THE GAME</div><h1>Every turning point.<br/><em>Explained.</em></h1><p>Evidence-backed intelligence from a fictional football match, simulated event by event.</p></div><div className="scoreboard"><div className="teams"><div><span className="crest home">N</span><strong>{match.home_name}</strong></div><span className="score">{score.home} <i>:</i> {score.away}</span><div><span className="crest away">H</span><strong>{match.away_name}</strong></div></div><div className="clock">MATCH TIME <strong>{fmt(time)}</strong> / 90:00</div></div></section>
- <section className="layout"><div className="panel fieldpanel"><div className="panelhead"><div><span className="eyebrow">01 / MATCH CONTROL</span><h2>Match visualization</h2></div><span className="indicator"><span className="dot"/> TRACKING ACTIVE</span></div>
- <div className="pitch"><svg viewBox="0 0 1000 610" role="img" aria-label="Synthetic football pitch with the latest event location"><defs><pattern id="grass" width="125" height="610" patternUnits="userSpaceOnUse"><rect width="125" height="610" fill="#155b48"/><rect width="62.5" height="610" fill="#19634e"/></pattern></defs><rect width="1000" height="610" fill="url(#grass)"/><g stroke="#b8d3c7" strokeWidth="3" fill="none" opacity=".66"><rect x="25" y="25" width="950" height="560"/><path d="M500 25V585"/><circle cx="500" cy="305" r="85"/><path d="M25 160H180V450H25 M975 160H820V450H975"/><path d="M25 235H85V375H25 M975 235H915V375H975"/></g>{current.slice(-12).map((e,i)=><circle key={e.id} cx={25+e.position.x*9.5} cy={25+e.position.y*5.6} r={i===current.slice(-12).length-1?13:6} fill={e.team==='home'?'#b0ecff':'#ffca6b'} opacity={i===current.slice(-12).length-1?1:.42} stroke="#ffffff" strokeWidth="1.5"/>)}{last&&<text x="500" y="57" fill="white" textAnchor="middle" fontSize="23" fontWeight="bold">{last.kind.toUpperCase()} · {last.player}</text>}</svg></div>
- <div className="controls"><button onClick={()=>{if(time>=match.duration_seconds)setTime(0);setPlaying(!playing)}}>{playing?'Ⅱ  PAUSE':'▶  PLAY'}</button><input aria-label="Replay timeline" type="range" min="0" max={match.duration_seconds} step="30" value={time} onChange={e=>{setTime(Number(e.target.value));setPlaying(false)}}/><select aria-label="Replay speed" value={speed} onChange={e=>setSpeed(Number(e.target.value))}><option value="30">30×</option><option value="90">90×</option><option value="180">180×</option></select></div><div className="smallmeta">{current.length} / {match.events.length} MATCH EVENTS · SEEDED, REPRODUCIBLE SIMULATION</div></div>
- <div className="rightcol"><section className="panel"><div className="panelhead"><div><span className="eyebrow">02 / ROLLING METRICS</span><h2>Last 5 minutes</h2></div><span className="tag">EVENT-DERIVED</span></div><div className="metricgrid">{(['home','away'] as const).map(team=><div className="metricteam" key={team}><div className="metricname"><span className={'bullet '+team}/>{team==='home'?match.home_name:match.away_name}</div><div className="metricrow"><span>High regains</span><strong>{snapshot?.[team].high_regains??'—'}</strong></div><div className="metricrow"><span>Regains</span><strong>{snapshot?.[team].regains??'—'}</strong></div><div className="metricrow"><span>Pass accuracy</span><strong>{snapshot?.[team].pass_accuracy_pct==null?'—':snapshot[team].pass_accuracy_pct+'%'}</strong></div></div>)}</div><p className="metricnote">High regains are a synthetic location-based proxy, not measured pressing intensity.</p></section><section className="panel insights"><div className="panelhead"><div><span className="eyebrow">03 / EVIDENCE-BACKED INSIGHTS</span><h2>The story so far</h2></div><span className="tag">RULE-BASED</span></div>{active?<div className="insightbody"><div className="eventtime">{fmt(active.second)} · {active.kind==='tactical_shift'?'TACTICAL SHIFT':'GOAL MOMENT'}</div><h3>{active.title}</h3><p>{active.explanation}</p><div className="evidence"><span>◈ SOURCE EVIDENCE</span><strong>{active.evidence_event_ids.length} linked events</strong><small>Deterministic interpretation — not generated by an LLM.</small><div className="evidenceentries">{active.evidence_event_ids.slice(-4).map(id=>{const ev=match.events.find(e=>e.id===id);return ev?<button title="Jump to this event" key={id} onClick={()=>{setTime(ev.second);setPlaying(false)}}>{fmt(ev.second)} · {ev.kind.toUpperCase()} <span>{ev.id}</span></button>:null})}</div></div></div>:<div className="empty"><span>◇</span><h3>Waiting for the story to unfold</h3><p>Play the match to reveal evidence-backed insights.</p></div>}</section><section className="panel agentroom"><div className="panelhead"><div><span className="eyebrow">04 / MULTI-AGENT CONTROL ROOM</span><h2>Verified storytelling</h2></div><span className="tag">MICROSOFT</span></div><div className="agentcontent"><div className="audiences">{(['fan','analyst','broadcast'] as const).map(a=><button key={a} className={audience===a?'selected':''} onClick={()=>setAudience(a)}>{a.toUpperCase()}</button>)}</div>{storyLoading?<div className="agentempty">Agents are checking the evidence…</div>:storyError?<div className="agenterror" role="alert">{storyError}</div>:story?<><div className="storymeta"><span>✓ VERIFIED CLAIMS</span><span>{story.source==='foundry_local'?'PHI / FOUNDRY LOCAL':story.source==='fallback'?'LOCAL MODEL FALLBACK':'DETERMINISTIC / FREE'}</span></div><h3>{story.headline}</h3><p className="narration">{story.narration}</p><div className="tracehead">AGENT EXECUTION TRACE</div><div className="tracelist">{story.trace.map((step,i)=><div className="tracestep" key={i}><span className="tracedot">{step.status==='rejected'?'!':'✓'}</span><div><strong>{step.stage}</strong><small>{step.detail}</small></div><span className={'tracestatus '+step.status}>{step.status}</span></div>)}</div></>:<div className="agentempty">Play until a goal or tactical shift to see the agent workflow.</div>}</div></section>
- <section className="panel feed"><div className="panelhead"><div><span className="eyebrow">05 / EVENT STREAM</span><h2>Match activity</h2></div><span className="tag">{current.length} EVENTS</span></div><div className="feedlist">{current.length===0?<div className="nothing">No events yet — press play.</div>:current.slice(-7).reverse().map(e=><div className="feedrow" key={e.id}><span>{fmt(e.second)}</span><span className={'bullet '+e.team}/><div><strong>{e.description}</strong><small>{e.team==='home'?match.home_name:match.away_name} · {e.id}</small></div></div>)}</div></section></div></section>
- <footer>MICROSOFT HACKATHON PROTOTYPE <span>·</span> ALL DATA FICTIONAL <span>·</span> NO OFFICIAL LEAGUE DATA</footer></main>
+  const [match,setMatch]=useState<Replay|null>(null);
+  const [error,setError]=useState('');
+  const [time,setTime]=useState(0);
+  const [playing,setPlaying]=useState(false);
+  const [speed,setSpeed]=useState(30);
+  const [audience,setAudience]=useState<Audience>('broadcast');
+  const [focus,setFocus]=useState(false);
+  const [stories,setStories]=useState<Record<string,Story>>({});
+  const [storyLoading,setStoryLoading]=useState(false);
+  const [storyError,setStoryError]=useState('');
+
+  useEffect(()=>{
+    const controller=new AbortController();
+    fetch(API,{signal:controller.signal})
+      .then(response=>{if(!response.ok)throw new Error('Replay API: '+response.status);return response.json()})
+      .then((data:Replay)=>setMatch(data))
+      .catch(err=>{if(!controller.signal.aborted)setError(String(err))});
+    return ()=>controller.abort();
+  },[]);
+
+  useEffect(()=>{
+    if(!match||!playing)return;
+    const interval=window.setInterval(()=>setTime(previous=>Math.min(match.duration_seconds,previous+speed)),1000);
+    return ()=>window.clearInterval(interval);
+  },[match,playing,speed]);
+
+  useEffect(()=>{
+    if(match && time>=match.duration_seconds)setPlaying(false);
+  },[time,match]);
+
+  const events=useMemo(()=>match?.events.filter(e=>e.second<=time)??[],[match,time]);
+  const score=useMemo(()=>({
+    home:events.filter(e=>e.team==='home'&&e.kind==='goal').length,
+    away:events.filter(e=>e.team==='away'&&e.kind==='goal').length,
+  }),[events]);
+  const insights=match?.insights.filter(i=>i.second<=time)??[];
+  const activeInsight=insights[insights.length-1];
+  const shownCues=match?.cues.filter(c=>c.second<=time&&time<c.until_second)??[];
+  const liveCue=shownCues[shownCues.length-1];
+  const snapshots=match?.snapshots.filter(s=>s.second<=time)??[];
+  const snapshot=snapshots[snapshots.length-1];
+  const storyKey=activeInsight ? activeInsight.id+':'+audience : '';
+  const activeStory=stories[storyKey];
+
+  useEffect(()=>{
+    if(!activeInsight||activeStory){setStoryLoading(false);setStoryError('');return;}
+    let valid=true;
+    const controller=new AbortController();
+    setStoryLoading(true);
+    setStoryError('');
+    const query=new URLSearchParams({seed:'7',insight_id:activeInsight.id,audience});
+    fetch(API+'/story?'+query.toString(),{signal:controller.signal})
+      .then(response=>{if(!response.ok)throw new Error('Agent pipeline: '+response.status);return response.json()})
+      .then((story:Story)=>{if(valid)setStories(previous=>({...previous,[storyKey]:story}))})
+      .catch(err=>{if(valid)setStoryError(String(err))})
+      .finally(()=>{if(valid)setStoryLoading(false)});
+    return ()=>{valid=false;controller.abort()};
+  },[activeInsight?.id,audience,activeStory,storyKey]);
+
+  function seek(second:number){setTime(second);setPlaying(false);}
+  const last=events[events.length-1];
+  const latestEvidence=(liveCue?.evidence_event_ids??activeInsight?.evidence_event_ids??[])
+    .slice(-6).map(id=>match?.events.find(e=>e.id===id)).filter((e):e is NonNullable<typeof e>=>Boolean(e));
+  const cueStory=liveCue?stories[liveCue.insight_id+':'+audience]:undefined;
+  const nextCue=match?.cues.find(c=>c.second>time);
+  const previousCue=match?.cues.filter(c=>c.second<time).slice(-1)[0];
+
+  if(error)return <main className="error"><h1>Backend unavailable</h1><p>{error}</p><p>Start FastAPI on port 8000, then refresh.</p></main>;
+  if(!match)return <main className="error"><h1>Loading broadcast studio…</h1></main>;
+
+  return <main className={'shell v4'+(focus?' focus-mode':'')}>
+    <header>
+      <div className="brand"><span className="mark">M</span><div>
+        <strong>MATCHSHIFT <span>AI</span></strong><small>INTELLIGENT MATCH STUDIO</small>
+      </div></div>
+      <div className="topright"><span className="dot"/> FICTIONAL MATCH
+        <span className="beta">BROADCAST DIRECTOR · V0.4</span>
+      </div>
+    </header>
+
+    <section className="v4-hero">
+      <div>
+        <div className="eyebrow">MATCH INTELLIGENCE / THE BROADCAST EXPERIENCE</div>
+        <h1>The game has a story.<br/><em>We show the why.</em></h1>
+        <p>One simulated match. Verified tactical insights. A broadcast shaped by agent decisions.</p>
+      </div>
+      <div className="match-card">
+        <div className="match-card-title">SYNTHETIC FRIENDLY <span>DEMO MATCH 001</span></div>
+        <div className="match-card-teams">
+          <div><span className="v4-crest home">N</span><strong>{match.home_name}</strong></div>
+          <div className="v4-result">{score.home} <span>:</span> {score.away}<small>{clock(time)}</small></div>
+          <div><span className="v4-crest away">H</span><strong>{match.away_name}</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <div className="v4-main">
+      <div className="v4-left">
+        <div className="v4-section-head">
+          <div><span className="eyebrow">01 / LIVE REPLAY STUDIO</span><h2>Broadcast canvas</h2></div>
+          <button className="v4-quiet-button" onClick={()=>setFocus(!focus)} aria-pressed={focus}>
+            {focus?'◱ Exit focus view':'▣ Focus broadcast'}
+          </button>
+        </div>
+        <BroadcastStage match={match} time={time} score={score} trail={events.slice(-12)}
+          cue={liveCue} story={cueStory} onSeek={seek}/>
+
+        <section className="v4-transport" aria-label="Match replay controls">
+          <div className="v4-playback">
+            <button className="v4-play" onClick={()=>{if(time===match.duration_seconds)setTime(0);setPlaying(!playing)}} aria-label={playing?'Pause match':'Play match'}>
+              {playing?'Ⅱ Pause':'▶ Play'}
+            </button>
+            <div className="v4-play-controls">
+              <button onClick={()=>previousCue&&seek(previousCue.second)} disabled={!previousCue} title="Previous highlight">← Previous</button>
+              <button onClick={()=>nextCue&&seek(nextCue.second)} disabled={!nextCue} title="Next highlight">Next →</button>
+            </div>
+            <label htmlFor="replay-speed" className="sr-only">Playback speed</label>
+            <select id="replay-speed" value={speed} onChange={e=>setSpeed(Number(e.target.value))}>
+              <option value={15}>15×</option><option value={30}>30×</option><option value={90}>90×</option>
+            </select>
+          </div>
+          <div className="v4-progress-wrap">
+            <input id="replay-progress" aria-label="Replay time" type="range" min={0} max={match.duration_seconds}
+              step={30} value={time} onChange={e=>seek(Number(e.target.value))}/>
+            <div className="v4-timeline-dots">
+              {match.cues.map(c=><button key={c.id} style={{left:(c.second/match.duration_seconds*100)+'%'}}
+                className={'v4-tick '+c.kind} title={c.headline+' at '+clock(c.second)}
+                aria-label={'Jump to '+c.headline+' at '+clock(c.second)}
+                onClick={()=>seek(c.second)}/>)}
+            </div>
+            <div className="v4-clock"><span>{clock(time)}</span><span>90:00</span></div>
+          </div>
+        </section>
+
+        <section className="v4-highlights">
+          <div className="v4-section-head"><div>
+            <span className="eyebrow">02 / DIRECTOR'S CUE SHEET</span>
+            <h2>Match-changing moments</h2>
+          </div><span className="v4-meta">{match.cues.length} VERIFIED CUES</span></div>
+          <div className="v4-cue-list">
+            {match.cues.map((c,i)=><button key={c.id}
+              className={'v4-cue-card '+(liveCue?.id===c.id?'active':'')}
+              onClick={()=>seek(c.second)} aria-label={'Jump to '+c.headline+' at '+clock(c.second)}>
+              <span className="v4-cue-num">{String(i+1).padStart(2,'0')}</span>
+              <span className={'v4-cue-icon '+c.kind}>{c.kind==='goal'?'⚽':'↗'}</span>
+              <span className="v4-cue-copy"><strong>{c.headline}</strong><small>{c.kind==='goal'?'GOAL · '+clock(c.second):'TACTICAL SHIFT · '+clock(c.second)}</small></span>
+              <span className="v4-cue-arrow">→</span>
+            </button>)}
+          </div>
+        </section>
+      </div>
+
+      <aside className="v4-right">
+        <section className="v4-panel">
+          <div className="v4-panel-head"><div className="eyebrow">03 / TACTICAL SIGNALS</div><h2>Five-minute snapshot</h2></div>
+          <div className="v4-team-metrics">
+            {(['home','away'] as const).map(team=><div className="v4-team" key={team}>
+              <div className="v4-team-title"><span className={'bullet '+team}/>{team==='home'?match.home_name:match.away_name}</div>
+              <div><span>High regains</span><strong>{snapshot?.[team].high_regains??'—'}</strong></div>
+              <div><span>Ball regains</span><strong>{snapshot?.[team].regains??'—'}</strong></div>
+              <div><span>Pass accuracy</span><strong>{snapshot?.[team].pass_accuracy_pct==null?'—':snapshot[team].pass_accuracy_pct+'%'}</strong></div>
+            </div>)}
+          </div>
+          <p className="v4-footnote">High regains are an event-location proxy, not measured real-world pressing or PPDA.</p>
+        </section>
+
+        <section className="v4-panel">
+          <div className="v4-panel-head"><div className="eyebrow">04 / MICROSOFT AGENT FRAMEWORK</div><h2>Verified story control</h2></div>
+          <div className="v4-audience">
+            {(['fan','analyst','broadcast'] as const).map(a=><button key={a} onClick={()=>setAudience(a)}
+              className={audience===a?'selected':''} aria-pressed={audience===a}>{a.toUpperCase()}</button>)}
+          </div>
+          <div className="v4-story">
+            {!activeInsight?<div className="v4-placeholder">Choose a highlight to see the verified four-stage agent workflow.</div>:
+              storyLoading&&!activeStory?<div className="v4-placeholder">Validating event evidence…</div>:
+              storyError&&!activeStory?<p className="agenterror" role="alert">{storyError}</p>:activeStory?
+                <><div className="v4-verified">✓ EVIDENCE VERIFIED <span>{activeStory.source==='foundry_local'?'PHI · FOUNDRY LOCAL':activeStory.source==='fallback'?'LOCAL MODEL FALLBACK':'FREE DETERMINISTIC MODE'}</span></div>
+                <h3>{activeStory.headline}</h3><p>{activeStory.narration}</p>
+                <div className="v4-trace-label">WORKFLOW TRACE</div>
+                <div className="v4-trace">{activeStory.trace.map((t,i)=><div key={i}>
+                  <span className={'v4-status '+t.status}>{t.status==='rejected'?'!':'✓'}</span>
+                  <div><strong>{t.stage}</strong><small>{t.detail}</small></div>
+                </div>)}</div></>:<div className="v4-placeholder">Fetching verified story…</div>}
+          </div>
+        </section>
+
+        <section className="v4-panel">
+          <div className="v4-panel-head"><div className="eyebrow">05 / SOURCE OF TRUTH</div><h2>Click-through evidence</h2></div>
+          <div className="v4-evidence">
+            {latestEvidence.length===0?<p className="v4-placeholder">Verified evidence appears after a match-changing moment.</p>:
+              latestEvidence.map(e=><button key={e.id} onClick={()=>seek(e.second)} title={'Jump to '+e.id}>
+                <span>{clock(e.second)}</span><strong>{e.kind.toUpperCase()} · {e.player}</strong><small>{e.id} ↗</small>
+              </button>)}
+          </div>
+          <div className="v4-source-footer">{last?events.length:0} / {match.events.length} SYNTHETIC EVENTS OBSERVED</div>
+        </section>
+      </aside>
+    </div>
+    <footer>MATCHSHIFT AI <span>·</span> FICTIONAL FOOTBALL DATA ONLY <span>·</span> NO PREMIER LEAGUE FOOTAGE OR OFFICIAL FEED</footer>
+  </main>;
 }
 createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);
