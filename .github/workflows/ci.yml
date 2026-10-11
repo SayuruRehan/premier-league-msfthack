@@ -12,6 +12,15 @@ jobs:
           python-version: '3.12'
       - run: pip install -r services/api/requirements-dev.txt
       - run: pytest -q
+      - name: Evaluate multiple synthetic matches and adversarial agent recovery
+        env:
+          MATCHSHIFT_INFERENCE: deterministic
+        run: python -m scripts.evaluate --out artifacts/evaluation
+      - name: Upload reproducible judging evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: matchshift-evaluation
+          path: artifacts/evaluation/
   frontend:
     runs-on: ubuntu-latest
     steps:

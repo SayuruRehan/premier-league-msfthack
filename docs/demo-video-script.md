@@ -26,3 +26,7 @@
 ## Optional on-screen real Phi evidence
 
 Only if `python -m scripts.probe_foundry_local` has genuinely passed on your hardware: you may record the terminal probe and explain that *two* roles choose angle and style through local Phi, while deterministic evidence verification and narration templates prevent invented claims. This is not required for the public judge demo and must never be simulated as a real model session.
+
+## Quick guided tour for the recording
+
+The broadcast canvas now includes **Guided tour · 27s**. It automatically shows a goal in Fan mode, a high-regain shift in Analyst mode, and the late goal in Broadcast mode, using only genuine precomputed cues and verified stories. It uses nine seconds per stop and can be stopped manually. You may record this sequence as a single clean take, then demonstrate the evidence and trace panels separately.
