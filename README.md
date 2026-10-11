@@ -2,7 +2,7 @@
 
 **Explainable football match intelligence, powered by synthetic events.** Built for the Premier League × Microsoft hackathon.
 
-This foundation delivers a reproducible synthetic match replay, a FastAPI endpoint, a React pitch/timeline viewer, and evidence-backed deterministic insights. Microsoft Agent Framework / Foundry Local integration is the next milestone; **no AI service is claimed or invoked in this version**.
+This prototype delivers a reproducible synthetic match replay, a FastAPI endpoint, a React pitch/timeline viewer, rolling tactical metrics, possession-chain summaries and evidence-backed deterministic insights. Microsoft Agent Framework / Foundry Local integration is the next milestone; **no AI service is claimed or invoked in this version**.
 
 ## Quick start
 
@@ -26,7 +26,7 @@ Visit http://localhost:5173. API docs: http://localhost:8000/docs.
 ## API
 
 - `GET /health`: service health
-- `GET /api/matches/demo`: deterministic complete synthetic match, including score, frames, events and insights
+- `GET /api/matches/demo`: deterministic complete synthetic match, including score, events, possession chains, rolling snapshots and insights
 - `GET /api/matches/demo?seed=12`: seeded variation (same seed => same result)
 
 ## Tests
@@ -40,7 +40,7 @@ cd apps/web && npm ci && npm run build
 ## Architecture
 
 - `packages/simulator`: seeded event simulator and Pydantic contracts.
-- `packages/analytics`: evidence-based rolling analysis, no generative AI yet.
+- `packages/analytics`: coherent possession chains, rolling five-minute metrics and evidence-grounded tactical-shift detection. See `docs/analytics.md` for signal definitions and limitations.
 - `services/api`: FastAPI JSON replay service.
 - `apps/web`: football pitch replay, scoreline, evidence and timeline.
 
