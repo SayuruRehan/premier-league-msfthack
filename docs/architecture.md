@@ -17,12 +17,20 @@
 - UI metric panel with click-through to underlying match events.
 - Documentation: `docs/analytics.md`.
 
-## Next: actual agentic reasoning (not included yet)
+## Milestone 3: Microsoft Agent Framework workflow (implemented)
 
-1. Implement Microsoft Agent Framework roles: tactical analyst, narrative director, evidence verifier, audience transformer.
-2. Integrate Foundry Local Phi as a configurable inference provider with deterministic/offline fallbacks.
-3. Persist auditable agent handoffs, rejections, evidence IDs, and timing.
-4. Public Azure Static Web Apps demonstration with precomputed replay and explicit disclosure of live versus cached inference.
+- Actual Microsoft `@workflow` orchestration with four typed `@step` roles (TacticalAnalyst, NarrativeDirector, EvidenceVerifier, AudienceAgent).
+- Default zero-cost deterministic stories; optional local Phi model selects a strictly validated narrative framing.
+- Claim/evidence verification, bounded rejection-and-retry recovery, explicit model fallback provenance.
+- Fan, analyst and broadcaster narration modes with a visible execution trace.
+- Reference: `docs/agents.md`.
+
+## Next: deeper AI and showcase (not implemented yet)
+
+1. Expand the local model to multiple genuinely generative specialist roles with claim validation, evaluation and latency budgets.
+2. Add persistent workflow run logs, latency metrics and observable real-time handoffs.
+3. Build a polished broadcast overlay and a short high-impact demonstration.
+4. Deploy a zero-cost public Azure Static Web Apps experience with disclosed precomputed inference and, if available, optional live model inference.
 
 ## Data licensing
 

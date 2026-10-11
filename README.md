@@ -36,7 +36,7 @@ Visit http://localhost:5173. API docs: http://localhost:8000/docs.
 ```sh
 pip install -r services/api/requirements-dev.txt
 pytest -q
-cd apps/web && npm ci && npm run build
+cd apps/web && npm install && npm run build
 ```
 
 ## Architecture
