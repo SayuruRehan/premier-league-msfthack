@@ -49,7 +49,7 @@ def test_static_export_writes_and_validates_trust_lab(tmp_path, monkeypatch):
 def test_static_export_requires_trust_lab_when_requested(tmp_path, monkeypatch):
     import pytest
     monkeypatch.setenv("MATCHSHIFT_INFERENCE", "deterministic")
-    replay, stories = asyncio.run(build_bundle(limit_insights=1))
+    replay, stories = asyncio.run(build_bundle())
     write_bundle(tmp_path, replay, stories)
     with pytest.raises(ValueError, match="missing"):
         verify_bundle(tmp_path, require_trust_lab=True)
