@@ -30,3 +30,7 @@ Only if `python -m scripts.probe_foundry_local` has genuinely passed on your har
 ## Quick guided tour for the recording
 
 The broadcast canvas now includes **Guided tour · 27s**. It automatically shows a goal in Fan mode, a high-regain shift in Analyst mode, and the late goal in Broadcast mode, using only genuine precomputed cues and verified stories. It uses nine seconds per stop and can be stopped manually. You may record this sequence as a single clean take, then demonstrate the evidence and trace panels separately.
+
+## Optional Trust Lab sequence (stronger evidence for Best Multi-Agent System)
+
+The judge-facing Agent Trust Lab adds three **controlled, clearly labeled simulated model-failure demonstrations** that run through the actual four-stage framework: unsupported claim → rejected + reverified; endpoint outage → transparent fallback; invalid style → template recovery. For a stronger agentic proof, allocate 12–18 seconds of the original 110-second video to show the invented-claim case and its `EvidenceVerifier: rejected` plus follow-up `approved`. Cut the old "click back into source events" section to maintain a runtime strictly under two minutes. **Never claim these were live Phi outputs.**

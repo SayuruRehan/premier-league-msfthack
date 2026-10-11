@@ -63,3 +63,28 @@ test('guided judge tour cycles through grounded highlights and can be stopped',a
   await page.getByRole('button',{name:'Stop guided tour'}).click();
   await expect(page.getByRole('status')).toHaveCount(0);
 });
+
+test('Trust Lab exposes simulated injection rejection, model outage and style fallback',async({page})=>{
+  const modelRequests:string[]=[];
+  page.on('request',request=>{
+    if(request.url().includes('/api/')||/openai|foundry|localhost:8000/i.test(request.url())){
+      modelRequests.push(request.url());
+    }
+  });
+  await page.goto('/',{waitUntil:'networkidle'});
+  const lab=page.getByRole('region',{name:'Agent Trust Lab'});
+  await expect(lab).toBeVisible();
+  await expect(lab).toContainText('SIMULATED TEST RESPONSES');
+  await expect(lab).toContainText('NO LIVE PHI INFERENCE');
+  await expect(lab).toContainText('Invented match claim');
+  await expect(lab.locator('.trust-step.rejected')).toHaveCount(1);
+  await expect(lab.locator('.trust-step.fallback')).not.toHaveCount(0);
+  await expect(lab.locator('.trust-narration')).not.toContainText('invented_200_goals');
+  await lab.getByRole('button',{name:'Model endpoint unavailable'}).click();
+  await expect(lab).toContainText('Simulated ConnectionError');
+  await expect(lab.locator('.trust-verified')).toContainText('DIRECTOR: FALLBACK');
+  await lab.getByRole('button',{name:'Unapproved audience style'}).click();
+  await expect(lab.locator('.trust-step.fallback').last()).toContainText('AudienceAgent');
+  await expect(lab.locator('.trust-narration')).not.toContainText('secret_match_fixing');
+  expect(modelRequests).toEqual([]);
+});

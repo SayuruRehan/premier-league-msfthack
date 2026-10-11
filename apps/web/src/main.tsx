@@ -1,6 +1,8 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {BroadcastStage} from './BroadcastStage';
+import {TrustLab} from './TrustLab';
+import type {TrustLabData} from './TrustLab';
 import type {Audience, Replay, Story} from './types';
 import {clock} from './types';
 import {buildTourStops} from './tour';
@@ -20,6 +22,7 @@ function App(){
   const [tourOn,setTourOn]=useState(false);
   const [tourIndex,setTourIndex]=useState(0);
   const [stories,setStories]=useState<Record<string,Story>>({});
+  const [trustLab,setTrustLab]=useState<TrustLabData|null>(null);
   const [storyLoading,setStoryLoading]=useState(false);
   const [storyError,setStoryError]=useState('');
 
@@ -32,10 +35,15 @@ function App(){
     };
     if(STATIC_MODE){
       // Static visitors receive verified precomputed results, never model/API calls.
-      Promise.all([checkedJson(STATIC_DATA_BASE+'replay.json'),checkedJson(STATIC_DATA_BASE+'stories.json')])
-        .then(([replay,precomputed]:[Replay,Record<string,Story>])=>{
+      Promise.all([
+        checkedJson(STATIC_DATA_BASE+'replay.json'),
+        checkedJson(STATIC_DATA_BASE+'stories.json'),
+        checkedJson(STATIC_DATA_BASE+'trust_lab.json'),
+      ])
+        .then(([replay,precomputed,lab]:[Replay,Record<string,Story>,TrustLabData])=>{
           if(controller.signal.aborted)return;
           setStories(precomputed);
+          setTrustLab(lab);
           setMatch(replay);
         })
         .catch(err=>{if(!controller.signal.aborted)setError(String(err))});
@@ -261,6 +269,7 @@ function App(){
           </div>
           <div className="v4-source-footer">{last?events.length:0} / {match.events.length} SYNTHETIC EVENTS OBSERVED</div>
         </section>
+        {trustLab&&<TrustLab data={trustLab}/>}
       </aside>
     </div>
     <footer>MATCHSHIFT AI <span>·</span> FICTIONAL FOOTBALL DATA ONLY <span>·</span> NO PREMIER LEAGUE FOOTAGE OR OFFICIAL FEED {STATIC_MODE?' · ALL AGENT STORIES PRECOMPUTED OFFLINE':''}</footer>
