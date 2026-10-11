@@ -57,6 +57,21 @@ class EvidenceInsight(BaseModel):
     team: Team | None = None
     comparison_value: float | None = None
 
+class BroadcastCue(BaseModel):
+    """Time-bound, traceable on-screen direction from trusted synthetic insights."""
+    id: str
+    insight_id: str
+    second: int = Field(ge=0, le=5400)
+    until_second: int = Field(ge=0, le=5400)
+    kind: Literal["goal", "tactical_shift"]
+    team: Team
+    headline: str
+    subtitle: str
+    metric_label: str
+    metric_value: float
+    focus: Position
+    evidence_event_ids: list[str]
+
 class MatchReplay(BaseModel):
     match_id: str
     synthetic: bool = True
@@ -69,3 +84,4 @@ class MatchReplay(BaseModel):
     possessions: list[PossessionSummary]
     snapshots: list[MetricSnapshot]
     insights: list[EvidenceInsight]
+    cues: list[BroadcastCue]
