@@ -52,3 +52,32 @@ jobs:
           test -s apps/web/dist/data/replay.json
           test -s apps/web/dist/data/stories.json
           grep -q './assets/' apps/web/dist/index.html
+
+      - name: Install headless Chromium
+        run: npx playwright install --with-deps chromium
+        working-directory: apps/web
+      - name: Start standalone public-site preview
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4173 >/tmp/matchshift-preview.log 2>&1 &
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then
+              echo "Public offline preview is ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/matchshift-preview.log
+          exit 1
+        working-directory: apps/web
+      - name: Verify judge experience in desktop and mobile browsers
+        run: npm run test:e2e
+        working-directory: apps/web
+      - name: Retain browser failure screenshots and traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: matchshift-playwright-diagnostics
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
+          if-no-files-found: ignore

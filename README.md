@@ -74,3 +74,9 @@ VITE_STATIC_DEMO=true npm run build
 The resulting `apps/web/dist` directory can be hosted as plain static files on **Azure Static Web Apps Free** or **GitHub Pages**. Public visitors never contact FastAPI, Foundry Local, a model provider, or an Azure AI endpoint. Static JSON is precomputed from real Agent Framework workflows with the no-model deterministic provider, and labeled accordingly. Local API plus live Microsoft Agent Framework execution remains the default development mode.
 
 The workflow `.github/workflows/deploy-azure-static.yml` builds and validates the static site on every push to `master` but does not deploy until `AZURE_STATIC_WEB_APPS_API_TOKEN` is configured. The GitHub Pages fallback `.github/workflows/deploy-pages.yml` also requires enabling **GitHub Actions** as the repository's Pages source. See `docs/deployment.md`.
+
+## Production acceptance checks
+
+- `CI` tests the compiled offline judge experience in Chromium (desktop + mobile) with Playwright.
+- The Azure deployment workflow verifies the **actual public site** after uploading and fails on missing/corrupted precomputed JSON or unsupported stories.
+- Full instructions: `docs/deployment.md`.
