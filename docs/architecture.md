@@ -45,3 +45,12 @@
 ## Data licensing
 
 Use only our own synthetic, fictional event data; no EPL branding, copyrighted game footage, or licensed play-by-play is included.
+
+## Milestone 5: portable offline judging artifact
+
+- Export MatchReplay and all precomputed fan, analyst and broadcast StoryResponse variants to JSON.
+- Export uses actual Microsoft Agent Framework execution in deterministic mode, validates evidence IDs, and rejects hidden model use.
+- Vite's VITE_STATIC_DEMO=true mode loads only relative static JSON, so judges do not depend on backend uptime or inference subscriptions.
+- Vite base './' supports root Azure URLs and GitHub Pages project subpaths.
+- Actions build Azure Static Web Apps (token-gated) and GitHub Pages (requires Pages activation).
+- Do not claim a live public URL until confirmed after successful release.

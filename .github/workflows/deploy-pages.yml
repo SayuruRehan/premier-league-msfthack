@@ -1,0 +1,65 @@
+name: Deploy free GitHub Pages fallback
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: matchshift-github-pages
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      pages_enabled: ${{ steps.check_pages.outputs.enabled }}
+    env:
+      MATCHSHIFT_INFERENCE: deterministic
+      VITE_STATIC_DEMO: 'true'
+    steps:
+      - name: Detect GitHub Pages setup
+        id: check_pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          http_code=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+            --header "Authorization: Bearer ${GH_TOKEN}" \
+            --header "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pages")
+          if [ "$http_code" = "200" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "GitHub Pages publishing is not enabled yet. Visit Settings -> Pages -> Source: GitHub Actions."
+          fi
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python -m pip install -r services/api/requirements.txt
+      - name: Export verified offline data
+        run: python -m scripts.export_static --output apps/web/public/data
+      - name: Install and build
+        run: |
+          npm install
+          npm run build
+        working-directory: apps/web
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/dist
+  deploy:
+    needs: build
+    if: needs.build.outputs.pages_enabled == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy site
+        id: deployment
+        uses: actions/deploy-pages@v4

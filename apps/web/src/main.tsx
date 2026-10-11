@@ -6,6 +6,8 @@ import {clock} from './types';
 import './style.css';
 
 const API='/api/matches/demo';
+const STATIC_MODE=import.meta.env.VITE_STATIC_DEMO==='true';
+const STATIC_DATA_BASE=import.meta.env.BASE_URL+'data/';
 function App(){
   const [match,setMatch]=useState<Replay|null>(null);
   const [error,setError]=useState('');
@@ -20,10 +22,24 @@ function App(){
 
   useEffect(()=>{
     const controller=new AbortController();
-    fetch(API,{signal:controller.signal})
-      .then(response=>{if(!response.ok)throw new Error('Replay API: '+response.status);return response.json()})
-      .then((data:Replay)=>setMatch(data))
-      .catch(err=>{if(!controller.signal.aborted)setError(String(err))});
+    const checkedJson=async(url:string)=>{
+      const response=await fetch(url,{signal:controller.signal});
+      if(!response.ok)throw new Error('Unable to load '+url+': '+response.status);
+      return response.json();
+    };
+    if(STATIC_MODE){
+      // Static visitors receive verified precomputed results, never model/API calls.
+      Promise.all([checkedJson(STATIC_DATA_BASE+'replay.json'),checkedJson(STATIC_DATA_BASE+'stories.json')])
+        .then(([replay,precomputed]:[Replay,Record<string,Story>])=>{
+          if(controller.signal.aborted)return;
+          setStories(precomputed);
+          setMatch(replay);
+        })
+        .catch(err=>{if(!controller.signal.aborted)setError(String(err))});
+    }else{
+      checkedJson(API).then((data:Replay)=>setMatch(data))
+        .catch(err=>{if(!controller.signal.aborted)setError(String(err))});
+    }
     return ()=>controller.abort();
   },[]);
 
@@ -53,6 +69,11 @@ function App(){
 
   useEffect(()=>{
     if(!activeInsight||activeStory){setStoryLoading(false);setStoryError('');return;}
+    if(STATIC_MODE){
+      setStoryLoading(false);
+      setStoryError('Verified offline story unavailable for this highlight.');
+      return;
+    }
     let valid=true;
     const controller=new AbortController();
     setStoryLoading(true);
@@ -82,8 +103,8 @@ function App(){
       <div className="brand"><span className="mark">M</span><div>
         <strong>MATCHSHIFT <span>AI</span></strong><small>INTELLIGENT MATCH STUDIO</small>
       </div></div>
-      <div className="topright"><span className="dot"/> FICTIONAL MATCH
-        <span className="beta">BROADCAST DIRECTOR · V0.4</span>
+      <div className="topright"><span className="dot"/> {STATIC_MODE?'PUBLIC OFFLINE DEMO':'FICTIONAL MATCH'}
+        <span className="beta">JUDGE DEMO · V0.5</span>
       </div>
     </header>
 
@@ -91,7 +112,7 @@ function App(){
       <div>
         <div className="eyebrow">MATCH INTELLIGENCE / THE BROADCAST EXPERIENCE</div>
         <h1>The game has a story.<br/><em>We show the why.</em></h1>
-        <p>One simulated match. Verified tactical insights. A broadcast shaped by agent decisions.</p>
+        <p>One simulated match. Evidence-backed broadcast cues. Verified stories orchestrated with Microsoft Agent Framework.</p>
       </div>
       <div className="match-card">
         <div className="match-card-title">SYNTHETIC FRIENDLY <span>DEMO MATCH 001</span></div>
@@ -205,7 +226,7 @@ function App(){
         </section>
       </aside>
     </div>
-    <footer>MATCHSHIFT AI <span>·</span> FICTIONAL FOOTBALL DATA ONLY <span>·</span> NO PREMIER LEAGUE FOOTAGE OR OFFICIAL FEED</footer>
+    <footer>MATCHSHIFT AI <span>·</span> FICTIONAL FOOTBALL DATA ONLY <span>·</span> NO PREMIER LEAGUE FOOTAGE OR OFFICIAL FEED {STATIC_MODE?' · ALL AGENT STORIES PRECOMPUTED OFFLINE':''}</footer>
   </main>;
 }
 createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);
