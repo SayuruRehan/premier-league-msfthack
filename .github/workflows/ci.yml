@@ -23,3 +23,32 @@ jobs:
         working-directory: apps/web
       - run: npm run build
         working-directory: apps/web
+
+  static_bundle:
+    runs-on: ubuntu-latest
+    env:
+      MATCHSHIFT_INFERENCE: deterministic
+      VITE_STATIC_DEMO: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install -r services/api/requirements.txt
+      - name: Run and verify actual offline Agent Framework exports
+        run: |
+          python -m scripts.export_static --output apps/web/public/data
+          python -m scripts.export_static --output apps/web/public/data --verify-only
+      - run: npm install
+        working-directory: apps/web
+      - name: Compile standalone judge demo
+        run: npm run build
+        working-directory: apps/web
+      - name: Check deployed artifact contains data and relative assets
+        run: |
+          test -s apps/web/dist/data/replay.json
+          test -s apps/web/dist/data/stories.json
+          grep -q './assets/' apps/web/dist/index.html
