@@ -13,10 +13,27 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      pages_enabled: ${{ steps.check_pages.outputs.enabled }}
     env:
       MATCHSHIFT_INFERENCE: deterministic
       VITE_STATIC_DEMO: 'true'
     steps:
+      - name: Detect GitHub Pages setup
+        id: check_pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          http_code=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+            --header "Authorization: Bearer ${GH_TOKEN}" \
+            --header "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pages")
+          if [ "$http_code" = "200" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "GitHub Pages publishing is not enabled yet. Visit Settings -> Pages -> Source: GitHub Actions."
+          fi
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
@@ -37,6 +54,7 @@ jobs:
           path: apps/web/dist
   deploy:
     needs: build
+    if: needs.build.outputs.pages_enabled == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
