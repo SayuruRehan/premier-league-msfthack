@@ -58,3 +58,19 @@ No Azure account, subscription or GPU is required for the default verified workf
 The cinematic broadcast canvas displays event-backed lower thirds, spotlighted pitch positions and recent passing trajectories. The clickable director's cue sheet and replay timeline navigate goals and tactical changes. Every on-screen cue has a start time, focus point, numerical metric and exact evidence IDs from synthetic events. `GET /api/matches/demo` now includes `cues`.
 
 The default mode is fully offline/deterministic. Optional Phi Local reasoning selects only narrative **angles** and **presentation styles**; a verifier rejects mismatched source facts and final story copy is emitted from trusted templates. This keeps a demo free to run without overstating model autonomy.
+
+## Judge-ready public demo (Milestone 5)
+
+Run at the repository root to generate a self-contained, validated offline snapshot of **every** synthetic insight in all three audience modes:
+
+```sh
+python -m pip install -r services/api/requirements.txt
+python -m scripts.export_static --output apps/web/public/data
+cd apps/web
+npm install
+VITE_STATIC_DEMO=true npm run build
+```
+
+The resulting `apps/web/dist` directory can be hosted as plain static files on **Azure Static Web Apps Free** or **GitHub Pages**. Public visitors never contact FastAPI, Foundry Local, a model provider, or an Azure AI endpoint. Static JSON is precomputed from real Agent Framework workflows with the no-model deterministic provider, and labeled accordingly. Local API plus live Microsoft Agent Framework execution remains the default development mode.
+
+The workflow `.github/workflows/deploy-azure-static.yml` builds and validates the static site on every push to `master` but does not deploy until `AZURE_STATIC_WEB_APPS_API_TOKEN` is configured. The GitHub Pages fallback `.github/workflows/deploy-pages.yml` also requires enabling **GitHub Actions** as the repository's Pages source. See `docs/deployment.md`.
