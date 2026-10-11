@@ -1,0 +1,23 @@
+export type Team = 'home' | 'away';
+export type Position = {x:number;y:number};
+export type MatchEvent = {
+  id:string;second:number;team:Team;kind:'pass'|'turnover'|'shot'|'goal'|'tackle';
+  player:string;position:Position;target:Position|null;success:boolean;
+  description:string;possession_id:string;
+};
+export type Insight = {id:string;second:number;title:string;explanation:string;
+  evidence_event_ids:string[];metric_value:number;kind:'goal'|'tactical_shift';team:Team|null};
+export type TeamMetrics = {actions:number;regains:number;high_regains:number;pass_attempts:number;
+  pass_completed:number;pass_accuracy_pct:number|null;shots:number;goals:number};
+export type Snapshot = {second:number;home:TeamMetrics;away:TeamMetrics};
+export type Cue = {id:string;insight_id:string;second:number;until_second:number;
+  kind:'goal'|'tactical_shift';team:Team;headline:string;subtitle:string;
+  metric_label:string;metric_value:number;focus:Position;evidence_event_ids:string[]};
+export type Replay = {synthetic:boolean;duration_seconds:number;home_name:string;away_name:string;
+  home_score:number;away_score:number;events:MatchEvent[];insights:Insight[];snapshots:Snapshot[];cues:Cue[]};
+export type Audience='fan'|'analyst'|'broadcast';
+export type StageTrace={stage:string;status:string;detail:string;evidence_event_ids:string[]};
+export type Story={insight_id:string;audience:Audience;headline:string;narration:string;angle:string;
+  verified:boolean;presentation_style:'plain'|'explainer'|'excited';style_source:'deterministic'|'foundry_local'|'fallback';source:'deterministic'|'foundry_local'|'fallback';framework:string;
+  trace:StageTrace[];evidence_event_ids:string[]};
+export const clock=(seconds:number)=>String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');

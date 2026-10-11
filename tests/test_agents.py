@@ -83,3 +83,40 @@ def test_verifier_rejects_tampered_evidence():
     verdict = asyncio.run(check())
     assert verdict.approved is False
     assert "source data" in verdict.reason
+
+def test_foundry_uses_two_model_backed_specialists_with_verified_templates(monkeypatch):
+    import packages.agents.workflow as module
+    async def approved_angle(_analysis):
+        return "scoreline"
+    async def approved_style(_analysis, _audience):
+        return "excited"
+    monkeypatch.setattr(module, "choose_with_foundry_local", approved_angle)
+    monkeypatch.setattr(module, "choose_style_with_foundry_local", approved_style)
+    monkeypatch.setenv("MATCHSHIFT_INFERENCE", "foundry_local")
+    response = client.get(f"/api/matches/demo/story?insight_id={INSIGHT}&audience=broadcast")
+    assert response.status_code == 200
+    story = response.json()
+    assert story["source"] == "foundry_local"
+    assert story["style_source"] == "foundry_local"
+    assert story["presentation_style"] == "excited"
+    assert story["verified"] is True
+    assert "A turning point in this simulated match!" in story["narration"]
+    assert story["trace"][-1]["stage"] == "AudienceAgent"
+
+def test_invalid_audience_model_output_cannot_enter_story(monkeypatch):
+    import packages.agents.workflow as module
+    async def approved_angle(_analysis):
+        return "scoreline"
+    async def unsafe_style(_analysis, _audience):
+        return "the away team secretly has 22 goals"
+    monkeypatch.setattr(module, "choose_with_foundry_local", approved_angle)
+    monkeypatch.setattr(module, "choose_style_with_foundry_local", unsafe_style)
+    monkeypatch.setenv("MATCHSHIFT_INFERENCE", "foundry_local")
+    response = client.get(f"/api/matches/demo/story?insight_id={INSIGHT}&audience=broadcast")
+    assert response.status_code == 200
+    story = response.json()
+    assert story["verified"] is True
+    assert story["source"] == "foundry_local"
+    assert story["style_source"] == "fallback"
+    assert story["presentation_style"] == "excited"
+    assert "22 goals" not in story["narration"]

@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 Audience = Literal["fan", "analyst", "broadcast"]
 Source = Literal["deterministic", "foundry_local", "fallback"]
+PresentationStyle = Literal["plain", "explainer", "excited"]
 
 class StoryRequest(BaseModel):
     seed: int = Field(ge=0, le=1_000_000)
@@ -49,5 +50,7 @@ class StoryResponse(BaseModel):
     verified: bool
     source: Source
     evidence_event_ids: list[str]
+    presentation_style: PresentationStyle = "plain"
+    style_source: Source = "deterministic"
     framework: str = "Microsoft Agent Framework"
     trace: list[StageTrace]

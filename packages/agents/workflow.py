@@ -18,6 +18,8 @@ from .contracts import (
 )
 
 ANGLES = {"scoreline", "momentum", "evidence"}
+STYLES = {"plain", "explainer", "excited"}
+DEFAULT_STYLE = {"fan": "explainer", "analyst": "plain", "broadcast": "excited"}
 PREFERRED = {"goal": "scoreline", "tactical_shift": "momentum"}
 
 
@@ -70,6 +72,33 @@ async def choose_with_foundry_local(analysis: Analysis) -> str:
     return response.text.strip().strip("\x60").lower()
 
 
+async def choose_style_with_foundry_local(analysis: Analysis, audience: str) -> str:
+    """A second genuine local model role; it may select a style, never raw facts."""
+    from agent_framework import Agent
+    from agent_framework.openai import OpenAIChatCompletionClient
+
+    url = os.getenv("MATCHSHIFT_LOCAL_URL", "http://127.0.0.1:5273/v1/")
+    if urlparse(url).scheme != "http" or urlparse(url).hostname not in ("127.0.0.1", "localhost", "::1"):
+        raise ValueError("MATCHSHIFT_LOCAL_URL must be a local HTTP endpoint")
+    agent = Agent(
+        client=OpenAIChatCompletionClient(
+            base_url=url, api_key="local",
+            model=os.getenv("MATCHSHIFT_LOCAL_MODEL", "phi-4-mini"),
+        ),
+        name="AudienceStyleAgent",
+        instructions=(
+            "You are an audience adaptation specialist for fictional football. "
+            "Return exactly one token from: plain, explainer, excited. "
+            "You may not write match statistics, claims, or new event details."
+        ),
+    )
+    result = await asyncio.wait_for(agent.run(
+        f"Audience: {audience}. Confirmed event category: {analysis.kind}. "
+        "Select the safest presentation style. Output only one allowed token."
+    ), timeout=12)
+    return result.text.strip().strip("\x60").lower()
+
+
 @step(name="NarrativeDirector")
 async def narrative_director(analysis: Analysis) -> DirectorDecision:
     if inference_mode() == "deterministic":
@@ -114,20 +143,56 @@ async def audience_agent(verification: Verification, audience: str) -> StoryResp
         raise ValueError("Refusing to broadcast an unverified insight")
     a = verification.decision.analysis
     angle = verification.decision.angle
+    if audience not in DEFAULT_STYLE:
+        raise ValueError("Unsupported audience")
+
+    style = DEFAULT_STYLE[audience]
+    style_source = "deterministic"
+    if inference_mode() == "foundry_local":
+        if verification.decision.source == "foundry_local":
+            try:
+                suggested = await choose_style_with_foundry_local(a, audience)
+                if suggested in STYLES:
+                    style = suggested
+                    style_source = "foundry_local"
+                else:
+                    style_source = "fallback"
+            except Exception:
+                style_source = "fallback"
+        else:
+            style_source = "fallback"
+
+    # Trusted templates contain the *entire* verified observation verbatim.
+    # The local model controls only a style token; it never supplies assertions.
     if audience == "fan":
         headline = f"{a.title}!"
-        narration = f"Here's the turning point: {a.explanation}"
+        lead = {
+            "plain": "Match update: ",
+            "explainer": "Here's what the fictional match events show: ",
+            "excited": "What a moment in this simulated match! ",
+        }[style]
+        narration = lead + a.explanation
     elif audience == "analyst":
         headline = f"Tactical evidence · {a.title}"
-        narration = f"Signal: {a.metric_name} = {a.metric_value:g}. {a.explanation}"
-    elif audience == "broadcast":
-        headline = a.title.upper()
-        narration = a.explanation
+        lead = {
+            "plain": f"Signal: {a.metric_name} = {a.metric_value:g}. ",
+            "explainer": f"Breakdown of {a.metric_name} ({a.metric_value:g}): ",
+            "excited": f"Tactical alert · {a.metric_name} = {a.metric_value:g}. ",
+        }[style]
+        narration = lead + a.explanation
     else:
-        raise ValueError("Unsupported audience")
+        headline = a.title.upper()
+        lead = {
+            "plain": "",
+            "explainer": "Here is the evidence behind this moment: ",
+            "excited": "A turning point in this simulated match! ",
+        }[style]
+        narration = lead + a.explanation
+
     return StoryResponse(
         insight_id=a.insight_id, audience=audience, headline=headline,
         narration=narration, angle=angle, verified=True,
+        presentation_style=style, style_source=style_source,
         source=verification.decision.source, evidence_event_ids=a.evidence_event_ids,
         trace=[],
     )
@@ -166,7 +231,10 @@ async def story_pipeline(request: StoryRequest) -> StoryResponse:
 
     result = await audience_agent(verification, request.audience)
     trace.append(StageTrace(stage="AudienceAgent", status="completed",
-                            detail=f"Rendered verified {request.audience} narration"))
+                            detail=(
+                                f"Rendered verified {request.audience} narration; "
+                                f"style={result.presentation_style}, source={result.style_source}"
+                            )))
     return result.model_copy(update={"trace": trace})
 
 
