@@ -36,7 +36,7 @@ def test_event_possession_consistency():
                 assert previous.success
                 assert event.kind not in ("turnover", "tackle")
             if event.kind in ("turnover", "tackle"):
-                assert event.team != previous.team
+                assert event.possession_id != previous.possession_id
         chains = build_possessions(events)
         assert [eid for chain in chains for eid in chain.event_ids] == [e.id for e in events]
         assert len({chain.id for chain in chains}) == len(chains)

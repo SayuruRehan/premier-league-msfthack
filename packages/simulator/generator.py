@@ -38,9 +38,9 @@ def generate_events(seed: int = 7) -> list[MatchEvent]:
         elif pregoal is not None:
             team = pregoal
             kind = "turnover" if team != possession else "pass"
-            success, True
+            success = True
         elif press_recovery:
-            team, kind, success, forced = "away", "turnover", True, True
+            team, kind, success = "away", "turnover", True
         elif press_setup:
             team = "home"
             kind = "turnover" if possession != "home" else "pass"
