@@ -1,0 +1,3 @@
+# Optional provider for real Phi inference via Microsoft Foundry Local.
+-r requirements.txt
+agent-framework-openai>=1.14,<2
