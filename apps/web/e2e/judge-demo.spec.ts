@@ -51,3 +51,15 @@ test('replay controls and evidence seek are interactive',async({page})=>{
   await page.getByRole('button',{name:'Pause match'}).click();
   await expect(page.getByRole('button',{name:'Play match'})).toBeVisible();
 });
+
+test('guided judge tour cycles through grounded highlights and can be stopped',async({page})=>{
+  await page.goto('/');
+  await expect(page.locator('.v4-cue-card').first()).toBeVisible();
+  await page.getByRole('button',{name:'Start guided tour'}).click();
+  await expect(page.getByRole('status')).toContainText('GUIDED TOUR 1/');
+  await expect(page.locator('.broadcast-lower-third')).toBeVisible();
+  await expect(page.locator('.v4-verified')).toBeVisible();
+  await expect(page.getByRole('status')).toContainText('FAN VIEW');
+  await page.getByRole('button',{name:'Stop guided tour'}).click();
+  await expect(page.getByRole('status')).toHaveCount(0);
+});

@@ -3,6 +3,7 @@ import {createRoot} from 'react-dom/client';
 import {BroadcastStage} from './BroadcastStage';
 import type {Audience, Replay, Story} from './types';
 import {clock} from './types';
+import {buildTourStops} from './tour';
 import './style.css';
 
 const API='/api/matches/demo';
@@ -16,6 +17,8 @@ function App(){
   const [speed,setSpeed]=useState(30);
   const [audience,setAudience]=useState<Audience>('broadcast');
   const [focus,setFocus]=useState(false);
+  const [tourOn,setTourOn]=useState(false);
+  const [tourIndex,setTourIndex]=useState(0);
   const [stories,setStories]=useState<Record<string,Story>>({});
   const [storyLoading,setStoryLoading]=useState(false);
   const [storyError,setStoryError]=useState('');
@@ -87,7 +90,29 @@ function App(){
     return ()=>{valid=false;controller.abort()};
   },[activeInsight?.id,audience,activeStory,storyKey]);
 
-  function seek(second:number){setTime(second);setPlaying(false);}
+  const tourStops=useMemo(()=>buildTourStops(match?.cues??[]),[match]);
+  useEffect(()=>{
+    if(!tourOn || tourStops.length===0)return;
+    const timer=window.setTimeout(()=>{
+      const next=tourIndex+1;
+      if(next>=tourStops.length){setTourOn(false);return;}
+      setTourIndex(next);
+      setTime(tourStops[next].second);
+      setAudience(tourStops[next].audience);
+    },9000);
+    return ()=>window.clearTimeout(timer);
+  },[tourOn,tourIndex,tourStops]);
+
+  function startTour(){
+    if(!tourStops.length)return;
+    setPlaying(false);
+    setTourIndex(0);
+    setTime(tourStops[0].second);
+    setAudience(tourStops[0].audience);
+    setTourOn(true);
+  }
+
+  function seek(second:number){setTourOn(false);setTime(second);setPlaying(false);}
   const last=events[events.length-1];
   const latestEvidence=(liveCue?.evidence_event_ids??activeInsight?.evidence_event_ids??[])
     .slice(-6).map(id=>match?.events.find(e=>e.id===id)).filter((e):e is NonNullable<typeof e>=>Boolean(e));
@@ -128,16 +153,28 @@ function App(){
       <div className="v4-left">
         <div className="v4-section-head">
           <div><span className="eyebrow">01 / LIVE REPLAY STUDIO</span><h2>Broadcast canvas</h2></div>
-          <button className="v4-quiet-button" onClick={()=>setFocus(!focus)} aria-pressed={focus}>
-            {focus?'◱ Exit focus view':'▣ Focus broadcast'}
-          </button>
+          <div className="v4-demo-actions">
+            <button className="v4-tour-button" disabled={!tourStops.length}
+              aria-label={tourOn?'Stop guided tour':'Start guided tour'}
+              aria-pressed={tourOn} onClick={()=>tourOn?setTourOn(false):startTour()}>
+              {tourOn?'■ Stop tour':'▶ Guided tour · 27s'}
+            </button>
+            <button className="v4-quiet-button" onClick={()=>setFocus(!focus)} aria-pressed={focus}>
+              {focus?'◱ Exit focus view':'▣ Focus broadcast'}
+            </button>
+          </div>
         </div>
+        {tourOn&&tourStops[tourIndex]&&<div className="v4-tour-status" role="status">
+          <strong>GUIDED TOUR {tourIndex+1}/{tourStops.length}</strong>
+          <span>{tourStops[tourIndex].headline} · {tourStops[tourIndex].audience.toUpperCase()} VIEW</span>
+          <span>Auto-advances every 9 seconds</span>
+        </div>}
         <BroadcastStage match={match} time={time} score={score} trail={events.slice(-12)}
           cue={liveCue} story={cueStory} onSeek={seek}/>
 
         <section className="v4-transport" aria-label="Match replay controls">
           <div className="v4-playback">
-            <button className="v4-play" onClick={()=>{if(time===match.duration_seconds)setTime(0);setPlaying(!playing)}} aria-label={playing?'Pause match':'Play match'}>
+            <button className="v4-play" onClick={()=>{setTourOn(false);if(time===match.duration_seconds)setTime(0);setPlaying(!playing)}} aria-label={playing?'Pause match':'Play match'}>
               {playing?'Ⅱ Pause':'▶ Play'}
             </button>
             <div className="v4-play-controls">

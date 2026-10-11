@@ -80,3 +80,10 @@ The workflow `.github/workflows/deploy-azure-static.yml` builds and validates th
 - `CI` tests the compiled offline judge experience in Chromium (desktop + mobile) with Playwright.
 - The Azure deployment workflow verifies the **actual public site** after uploading and fails on missing/corrupted precomputed JSON or unsupported stories.
 - Full instructions: `docs/deployment.md`.
+
+## Hackathon submission, proof and guided demo
+
+- **One-click guided tour:** use "Guided tour · 27s" on the broadcast canvas to jump through a goal, tactical change and comeback moment; the audience mode changes with each stop. You can stop it or seek manually any time.
+- **Measured evaluation:** run `python -m scripts.evaluate` to test multiple synthetic seeds, every persona's real four-stage workflow, exact cue/evidence grounding, and three adversarial recovery cases. CI saves a machine-readable report as a downloadable `matchshift-evaluation` artifact. This is *not* a football accuracy benchmark.
+- **Actual Phi validation (separate and opt-in):** run `python -m scripts.probe_foundry_local` after setting up a real compatible Foundry Local runtime; fail-closed if the model did not answer through both roles.
+- **Hackathon package:** `docs/hackathon-submission.md`, `docs/demo-video-script.md`, `docs/judging-evidence.md`, `docs/foundry-local-validation.md`.

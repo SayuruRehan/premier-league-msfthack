@@ -58,3 +58,11 @@
 @media(max-width:770px){.v4-hero{flex-direction:column;align-items:stretch}.match-card{min-width:0}.v4-right{grid-template-columns:1fr}.v4-right .v4-panel:last-child{grid-column:auto}.v4-cue-list{grid-template-columns:1fr 1fr}.broadcast-lower-third{right:3%;padding:10px}.broadcast-facts{gap:6px;font-size:8px;margin-top:5px;padding-top:5px}.broadcast-facts strong{font-size:15px}.broadcast-kicker{font-size:8px}.broadcast-watermark{display:none}}
 @media(max-width:550px){.v4-hero{padding:30px 0 22px}.v4-hero h1{font-size:36px}.v4-cue-list{grid-template-columns:1fr}.v4-cue-card{padding:11px}.v4-playback{gap:6px}.v4-play{min-width:68px;padding:10px}.v4-play-controls button{padding:9px;font-size:11px}.v4-playback select{padding:9px}.broadcast-prompt{left:9%;right:9%;top:25%;padding:12px}.broadcast-prompt strong{font-size:14px}.broadcast-prompt span{font-size:10px;margin:6px}.broadcast-prompt button{font-size:10px;padding:6px}.broadcast-lower-third h3{font-size:16px;margin:5px 0}.broadcast-lower-third p{display:none}.broadcast-top .onair{font-size:7px;padding:5px}.tv-score{gap:4px;padding:5px}.tv-score span{font-size:8px;padding:3px}.tv-score strong{font-size:12px}.tv-score b{font-size:9px}.broadcast-activity{font-size:9px;padding:5px}.broadcast-activity b{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.broadcast-pulse{animation:none}.v4-cue-card{transition:none}}
+
+/* Guided judge walkthrough is fully client-side; it only seeks verified cues. */
+.v4-demo-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:flex-end}
+.v4-tour-button{border:1px solid #b6f385;background:#b6f385;color:#143027;font-weight:900;letter-spacing:.25px;font-size:12px;border-radius:6px;padding:10px 13px;cursor:pointer}
+.v4-tour-button:hover{background:#d1ffa8}.v4-tour-button:disabled{opacity:.45;cursor:not-allowed}
+.v4-tour-status{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;background:#1d3734;border:1px solid #477b58;border-radius:6px;padding:9px 12px;margin:0 0 9px;color:#d9f6db;font-size:11px}
+.v4-tour-status strong{color:#b6f385;letter-spacing:1px;font-size:10px}.v4-tour-status span:last-child{color:#99b7ac;font-size:10px}
+@media(max-width:550px){.v4-demo-actions{justify-content:flex-start}.v4-demo-actions button{padding:8px;font-size:10px}.v4-tour-status{font-size:10px}}
