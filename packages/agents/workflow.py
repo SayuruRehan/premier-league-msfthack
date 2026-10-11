@@ -27,7 +27,7 @@ def inference_mode() -> str:
     return "foundry_local" if os.getenv("MATCHSHIFT_INFERENCE", "deterministic").lower() == "foundry_local" else "deterministic"
 
 
-@step(name="TacticalAnalyst")
+@step(name="TacticalAnalyst", replay_key=lambda request: f"{request.seed}:{request.insight_id}")
 async def tactical_analyst(request: StoryRequest) -> Analysis:
     events = generate_events(request.seed)
     insight = next((item for item in generate_insights(events) if item.id == request.insight_id), None)
@@ -95,7 +95,7 @@ async def choose_style_with_foundry_local(analysis: Analysis, audience: str) -> 
     return result.text.strip().strip("\x60").lower()
 
 
-@step(name="NarrativeDirector")
+@step(name="NarrativeDirector", replay_key=lambda analysis: f"{analysis.seed}:{analysis.insight_id}")
 async def narrative_director(analysis: Analysis) -> DirectorDecision:
     if inference_mode() == "deterministic":
         return DirectorDecision(analysis=analysis, angle=PREFERRED[analysis.kind],
@@ -110,7 +110,7 @@ async def narrative_director(analysis: Analysis) -> DirectorDecision:
                                 source="fallback", note="Local inference unavailable; safe fallback")
 
 
-@step(name="EvidenceVerifier")
+@step(name="EvidenceVerifier", replay_key=lambda decision: f"{decision.analysis.seed}:{decision.analysis.insight_id}:{decision.source}:{decision.angle}")
 async def evidence_verifier(decision: DirectorDecision) -> Verification:
     analysis = decision.analysis
     expected = next(
@@ -133,7 +133,7 @@ async def evidence_verifier(decision: DirectorDecision) -> Verification:
     return Verification(decision=decision, approved=True, reason="Claims, timestamps and event IDs revalidated")
 
 
-@step(name="AudienceAgent")
+@step(name="AudienceAgent", replay_key=lambda verification, audience: f"{verification.decision.analysis.seed}:{verification.decision.analysis.insight_id}:{audience}:{verification.decision.source}:{verification.decision.angle}")
 async def audience_agent(verification: Verification, audience: str) -> StoryResponse:
     if not verification.approved:
         raise ValueError("Refusing to broadcast an unverified insight")
