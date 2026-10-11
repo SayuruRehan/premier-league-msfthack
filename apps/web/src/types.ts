@@ -18,6 +18,6 @@ export type Replay = {synthetic:boolean;duration_seconds:number;home_name:string
 export type Audience='fan'|'analyst'|'broadcast';
 export type StageTrace={stage:string;status:string;detail:string;evidence_event_ids:string[]};
 export type Story={insight_id:string;audience:Audience;headline:string;narration:string;angle:string;
-  verified:boolean;source:'deterministic'|'foundry_local'|'fallback';framework:string;
+  verified:boolean;presentation_style:'plain'|'explainer'|'excited';style_source:'deterministic'|'foundry_local'|'fallback';source:'deterministic'|'foundry_local'|'fallback';framework:string;
   trace:StageTrace[];evidence_event_ids:string[]};
 export const clock=(seconds:number)=>String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');

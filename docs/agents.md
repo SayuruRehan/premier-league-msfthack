@@ -11,7 +11,9 @@ The backend executes `@workflow(name="MatchShiftStoryPipeline")` from Microsoft'
 | EvidenceVerifier | Recomputes every numeric fact and validates evidence IDs | Approve or reject |
 | AudienceAgent | Produces vetted fan / analyst / broadcast copy | StoryResponse |
 
-A rejected angle triggers one **bounded replan** with the deterministic safe option; no verified facts are overwritten. If local AI inference is unavailable, the request succeeds using transparent `source=fallback`. This is an intentionally *hybrid* agent workflow, not four independent LLM calls. We can expand generative roles after hardening the verifier.
+When `MATCHSHIFT_INFERENCE=foundry_local`, a **second model-backed AudienceStyleAgent** selects an allowed presentation-style token within the AudienceAgent stage. It cannot write source claims. Its decision is recorded separately through `presentation_style` and `style_source`. If the style output is unsupported or times out, a deterministic template is used and this role records `style_source=fallback`.
+
+A rejected angle triggers one **bounded replan** with the deterministic safe option; no verified facts are overwritten. If local AI inference is unavailable, the request succeeds using transparent `source=fallback`. This remains an intentionally *hybrid* workflow: two optional model-backed decisions and deterministic analysis, verification and final wording. No model is allowed to write unverified free-form match claims. We can expand generative roles after hardening the verifier.
 
 ## Zero-cost default (no model or cloud account required)
 

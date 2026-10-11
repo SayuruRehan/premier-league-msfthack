@@ -2,7 +2,7 @@
 
 **Explainable football match intelligence, powered by synthetic events.** Built for the Premier League × Microsoft hackathon.
 
-This prototype delivers a reproducible synthetic match replay, a FastAPI endpoint, a React pitch/timeline viewer, rolling tactical metrics, possession-chain summaries and evidence-backed deterministic insights. Microsoft Agent Framework now orchestrates a four-stage evidence-verified storytelling workflow. **No paid AI service is needed**: the default runs deterministically, with optional genuine local Phi inference through Microsoft Foundry Local.
+This prototype delivers a reproducible synthetic match replay, a FastAPI endpoint, a React pitch/timeline viewer, rolling tactical metrics, possession-chain summaries and evidence-backed deterministic insights. Microsoft Agent Framework now orchestrates a four-stage evidence-verified storytelling workflow. **No paid AI service is needed**: the default runs deterministically, with optional genuine local Phi inference through Microsoft Foundry Local for the Narrative Director **and** Audience Style roles.
 
 ## Quick start
 
@@ -52,3 +52,9 @@ All clubs, players, and match actions are **fictional and synthetic**; no licens
 ## Optional local AI model
 
 No Azure account, subscription or GPU is required for the default verified workflow. To enable genuine local model decisions, install `services/api/requirements-local.txt` and configure `MATCHSHIFT_INFERENCE=foundry_local`. See `docs/agents.md` for safety rules, model IDs and setup.
+
+## Broadcast experience
+
+The cinematic broadcast canvas displays event-backed lower thirds, spotlighted pitch positions and recent passing trajectories. The clickable director's cue sheet and replay timeline navigate goals and tactical changes. Every on-screen cue has a start time, focus point, numerical metric and exact evidence IDs from synthetic events. `GET /api/matches/demo` now includes `cues`.
+
+The default mode is fully offline/deterministic. Optional Phi Local reasoning selects only narrative **angles** and **presentation styles**; a verifier rejects mismatched source facts and final story copy is emitted from trusted templates. This keeps a demo free to run without overstating model autonomy.

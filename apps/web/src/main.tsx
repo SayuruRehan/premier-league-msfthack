@@ -185,7 +185,7 @@ function App(){
               storyError&&!activeStory?<p className="agenterror" role="alert">{storyError}</p>:activeStory?
                 <><div className="v4-verified">✓ EVIDENCE VERIFIED <span>{activeStory.source==='foundry_local'?'PHI · FOUNDRY LOCAL':activeStory.source==='fallback'?'LOCAL MODEL FALLBACK':'FREE DETERMINISTIC MODE'}</span></div>
                 <h3>{activeStory.headline}</h3><p>{activeStory.narration}</p>
-                <div className="v4-trace-label">WORKFLOW TRACE</div>
+                <div className="v4-trace-label">WORKFLOW TRACE · {activeStory.presentation_style.toUpperCase()} STYLE ({activeStory.style_source.toUpperCase()})</div>
                 <div className="v4-trace">{activeStory.trace.map((t,i)=><div key={i}>
                   <span className={'v4-status '+t.status}>{t.status==='rejected'?'!':'✓'}</span>
                   <div><strong>{t.stage}</strong><small>{t.detail}</small></div>
