@@ -47,7 +47,7 @@ jobs:
         env:
           MATCHSHIFT_PUBLIC_URL: https://jolly-bay-020154010.1.azurestaticapps.net
         run: |
-          python -m scripts.check_public_site --url "$MATCHSHIFT_PUBLIC_URL" --attempts 10 --retry-seconds 8
+          python -m scripts.check_public_site --url "$MATCHSHIFT_PUBLIC_URL" --attempts 10 --retry-seconds 8 --require-trust-lab
       - name: Explain missing Azure setup
         if: ${{ env.SWA_DEPLOYMENT_TOKEN == '' }}
         run: echo "Built and verified the offline demo. Azure publishing skipped until AZURE_STATIC_WEB_APPS_API_TOKEN is configured."

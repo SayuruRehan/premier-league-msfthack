@@ -87,3 +87,9 @@ The workflow `.github/workflows/deploy-azure-static.yml` builds and validates th
 - **Measured evaluation:** run `python -m scripts.evaluate` to test multiple synthetic seeds, every persona's real four-stage workflow, exact cue/evidence grounding, and three adversarial recovery cases. CI saves a machine-readable report as a downloadable `matchshift-evaluation` artifact. This is *not* a football accuracy benchmark.
 - **Actual Phi validation (separate and opt-in):** run `python -m scripts.probe_foundry_local` after setting up a real compatible Foundry Local runtime; fail-closed if the model did not answer through both roles.
 - **Hackathon package:** `docs/hackathon-submission.md`, `docs/demo-video-script.md`, `docs/judging-evidence.md`, `docs/foundry-local-validation.md`.
+
+## Public Agent Trust Lab (simulated failure tests)
+
+The public demo includes an interactive **Agent Trust Lab** explaining what happens when the Narrative Director suggests an unsupported claim, when the inference provider fails, or when the Audience Agent receives an invalid presentation style. Each case is **precomputed through the real Microsoft Agent Framework workflow with controlled test stubs, not a real Phi/LLM call**. It shows the actual workflow trace, rejection/fallback status and safe verified final narration.
+
+Run `python -m scripts.export_static` to generate `data/trust_lab.json` alongside the normal offline replay and persona stories. Unit tests and post-deployment verification check the scenarios. **Do not present these controlled simulations as actual online attacks or measured model hallucination rates.**

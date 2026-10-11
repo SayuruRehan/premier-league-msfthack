@@ -66,3 +66,36 @@
 .v4-tour-status{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;background:#1d3734;border:1px solid #477b58;border-radius:6px;padding:9px 12px;margin:0 0 9px;color:#d9f6db;font-size:11px}
 .v4-tour-status strong{color:#b6f385;letter-spacing:1px;font-size:10px}.v4-tour-status span:last-child{color:#99b7ac;font-size:10px}
 @media(max-width:550px){.v4-demo-actions{justify-content:flex-start}.v4-demo-actions button{padding:8px;font-size:10px}.v4-tour-status{font-size:10px}}
+
+/* Trust Lab: controlled model-output simulations, never interactive AI calls. */
+.trust-lab .v4-panel-head h2{margin:6px 0 10px}
+.trust-disclosure{font-size:10px;letter-spacing:.7px;color:#ffda92;font-weight:800;margin:0}
+.trust-content{padding:15px 17px 20px}
+.trust-intro{font-size:12px;line-height:1.6;color:#a2c0b7;margin:0 0 14px}
+.trust-choices{display:grid;grid-template-columns:1fr;gap:6px;margin-bottom:15px}
+.trust-choices button{border:1px solid #395853;border-radius:5px;background:#1b3334;color:#d1e9dd;padding:11px;text-align:left;font-size:12px;font-weight:700;cursor:pointer}
+.trust-choices button:hover{border-color:#c1f489}
+.trust-choices button.active{border-color:#b3f58a;background:#27483c;color:#d6ffbb}
+.trust-case{border:1px solid #395752;border-radius:8px;background:#102b2e;padding:14px}
+.trust-question{font-size:14px;font-weight:800;line-height:1.45}
+.trust-proposal-label{color:#eec98c;letter-spacing:1px;font-size:9px;font-weight:850;margin:15px 0 7px}
+.trust-proposal{display:block;background:#302d2b;border:1px solid #6d5140;border-radius:5px;color:#f3d6b6;font-size:11px;padding:11px;overflow-wrap:anywhere;white-space:normal}
+.trust-expected{color:#a8c5b4;font-size:11px;line-height:1.6;margin:12px 0 16px}
+.trust-verified{display:flex;flex-direction:column;gap:6px;padding:10px;border-left:3px solid #b6ee84;background:#1d4035}
+.trust-verified strong{color:#c2f899;font-size:11px;letter-spacing:.5px}
+.trust-verified span{color:#bdd6ca;font-size:9px;letter-spacing:.2px}
+.trust-narration{font-size:12px;color:#e0eee4;line-height:1.6}
+.trust-trace-heading{font-size:10px;color:#b2f88f;letter-spacing:1px;font-weight:800;padding:12px 0 9px}
+.trust-trace{border:1px solid #35544c;border-radius:6px;overflow:hidden}
+.trust-step{display:flex;gap:8px;align-items:start;padding:9px 8px;border-bottom:1px solid #2b4b43}
+.trust-step:last-child{border:0}
+.trust-step-marker{flex:none;width:20px;height:20px;display:grid;place-items:center;border-radius:50%;border:1px solid #68916b;color:#adfa92}
+.trust-step.rejected .trust-step-marker{color:#ff9b9b;border-color:#cc7676}
+.trust-step.fallback .trust-step-marker{color:#ffc881;border-color:#bd9871}
+.trust-step>div{flex:1;min-width:0}
+.trust-step strong{display:block;font-size:11px}
+.trust-step small{display:block;font-size:10px;line-height:1.4;color:#9dbbb2;margin-top:4px}
+.trust-step-status{text-transform:uppercase;font-size:9px;color:#b4d7bc}
+.trust-step.rejected .trust-step-status{color:#ff9f9f}
+.trust-step.fallback .trust-step-status{color:#ffc881}
+.trust-proof{font-size:10px;color:#a5c5ad;padding-top:12px}

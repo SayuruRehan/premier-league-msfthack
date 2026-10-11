@@ -230,11 +230,14 @@ async def story_pipeline(request: StoryRequest) -> StoryResponse:
             raise ValueError("Safe fallback could not be verified")
 
     result = await audience_agent(verification, request.audience)
-    trace.append(StageTrace(stage="AudienceAgent", status="completed",
-                            detail=(
-                                f"Rendered verified {request.audience} narration; "
-                                f"style={result.presentation_style}, source={result.style_source}"
-                            )))
+    trace.append(StageTrace(
+        stage="AudienceAgent",
+        status="fallback" if result.style_source == "fallback" else "completed",
+        detail=(
+            f"Rendered verified {request.audience} narration; "
+            f"style={result.presentation_style}, source={result.style_source}"
+        ),
+    ))
     return result.model_copy(update={"trace": trace})
 
 

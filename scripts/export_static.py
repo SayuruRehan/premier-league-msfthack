@@ -13,6 +13,9 @@ from pathlib import Path
 from packages.agents.contracts import StoryRequest
 from packages.agents.workflow import run_story
 from services.api.app.main import demo
+from scripts.trust_lab import build_trust_lab, validate_trust_lab
+from packages.analytics.insights import generate_insights
+from packages.simulator.generator import generate_events
 
 AUDIENCES = ("fan", "analyst", "broadcast")
 
@@ -46,7 +49,7 @@ async def build_bundle(seed: int = 7, limit_insights: int | None = None) -> tupl
     return replay, stories
 
 
-def write_bundle(output: Path, replay: dict, stories: dict) -> None:
+def write_bundle(output: Path, replay: dict, stories: dict, trust_lab: dict | None = None) -> None:
     output.mkdir(parents=True, exist_ok=True)
     (output / "replay.json").write_text(
         json.dumps(replay, separators=(",", ":"), sort_keys=True) + "\n", encoding="utf-8"
@@ -54,9 +57,13 @@ def write_bundle(output: Path, replay: dict, stories: dict) -> None:
     (output / "stories.json").write_text(
         json.dumps(stories, separators=(",", ":"), sort_keys=True) + "\n", encoding="utf-8"
     )
+    if trust_lab is not None:
+        (output / "trust_lab.json").write_text(
+            json.dumps(trust_lab, separators=(",", ":"), sort_keys=True) + "\n", encoding="utf-8"
+        )
 
 
-def verify_bundle(output: Path) -> None:
+def verify_bundle(output: Path, require_trust_lab: bool = False) -> None:
     replay = json.loads((output / "replay.json").read_text(encoding="utf-8"))
     stories = json.loads((output / "stories.json").read_text(encoding="utf-8"))
     assert replay["synthetic"] is True
@@ -76,6 +83,17 @@ def verify_bundle(output: Path) -> None:
             assert [t["stage"] for t in story["trace"]] == [
                 "TacticalAnalyst", "NarrativeDirector", "EvidenceVerifier", "AudienceAgent"
             ]
+    lab_path = output / "trust_lab.json"
+    if require_trust_lab and not lab_path.exists():
+        raise ValueError("Expected generated trust_lab.json is missing")
+    if lab_path.exists():
+        lab = json.loads(lab_path.read_text(encoding="utf-8"))
+        if lab.get("seed") != int(replay["match_id"].split("-")[-1]):
+            raise ValueError("Trust lab and replay do not share a seed")
+        source_insights = {
+            insight.id: insight for insight in generate_insights(generate_events(lab["seed"]))
+        }
+        validate_trust_lab(lab, source_insights)
 
 
 def main() -> None:
@@ -85,11 +103,16 @@ def main() -> None:
     parser.add_argument("--verify-only", action="store_true")
     args = parser.parse_args()
     if args.verify_only:
-        verify_bundle(args.output)
+        verify_bundle(args.output, require_trust_lab=True)
     else:
-        replay, stories = asyncio.run(build_bundle(seed=args.seed))
-        write_bundle(args.output, replay, stories)
-        verify_bundle(args.output)
+        async def generate_all():
+            replay, stories = await build_bundle(seed=args.seed)
+            lab = await build_trust_lab(seed=args.seed)
+            return replay, stories, lab
+
+        replay, stories, trust_lab = asyncio.run(generate_all())
+        write_bundle(args.output, replay, stories, trust_lab)
+        verify_bundle(args.output, require_trust_lab=True)
     print(f"Validated MatchShift static replay and stories at {args.output}")
 
 
