@@ -11,6 +11,14 @@ from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    version("agent-framework-openai")
+except PackageNotFoundError:
+    pytest.skip("Optional agent-framework-openai provider is not installed in the core-only job",
+                allow_module_level=True)
+
 pytest.importorskip("agent_framework.openai")
 
 from packages.agents.contracts import StoryRequest
