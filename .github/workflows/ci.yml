@@ -103,3 +103,16 @@ jobs:
           python-version: '3.12'
       - name: Verify current public Azure production site from GitHub runner
         run: python -m scripts.check_public_site --url https://jolly-bay-020154010.1.azurestaticapps.net --attempts 6 --retry-seconds 8
+
+  foundry_transport:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install optional Microsoft OpenAI transport integration
+        run: python -m pip install -r services/api/requirements-dev.txt -r services/api/requirements-local.txt
+      - name: Exercise both model-backed Agent Framework roles over local HTTP
+        run: python -m pytest tests/test_foundry_transport.py tests/test_local_endpoint.py -q

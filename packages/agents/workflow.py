@@ -8,7 +8,7 @@ workflow retries once with a safe deterministic decision. No cloud calls occur.
 """
 import asyncio
 import os
-from urllib.parse import urlparse
+from .local_endpoint import get_local_config
 
 from agent_framework import workflow, step
 from packages.analytics.insights import generate_insights
@@ -27,7 +27,7 @@ def inference_mode() -> str:
     return "foundry_local" if os.getenv("MATCHSHIFT_INFERENCE", "deterministic").lower() == "foundry_local" else "deterministic"
 
 
-@step(name="TacticalAnalyst")
+@step(name="TacticalAnalyst", replay_key=lambda request: f"{request.seed}:{request.insight_id}")
 async def tactical_analyst(request: StoryRequest) -> Analysis:
     events = generate_events(request.seed)
     insight = next((item for item in generate_insights(events) if item.id == request.insight_id), None)
@@ -47,12 +47,10 @@ async def choose_with_foundry_local(analysis: Analysis) -> str:
     from agent_framework import Agent
     from agent_framework.openai import OpenAIChatCompletionClient
 
-    url = os.getenv("MATCHSHIFT_LOCAL_URL", "http://127.0.0.1:5273/v1/")
-    if urlparse(url).scheme != "http" or urlparse(url).hostname not in ("127.0.0.1", "localhost", "::1"):
-        raise ValueError("MATCHSHIFT_LOCAL_URL must be a local HTTP endpoint")
+    config = get_local_config()
     client = OpenAIChatCompletionClient(
-        base_url=url, api_key="local",
-        model=os.getenv("MATCHSHIFT_LOCAL_MODEL", "phi-4-mini"),
+        base_url=config.base_url, api_key="local",
+        model=config.model,
     )
     agent = Agent(
         client=client,
@@ -77,13 +75,11 @@ async def choose_style_with_foundry_local(analysis: Analysis, audience: str) -> 
     from agent_framework import Agent
     from agent_framework.openai import OpenAIChatCompletionClient
 
-    url = os.getenv("MATCHSHIFT_LOCAL_URL", "http://127.0.0.1:5273/v1/")
-    if urlparse(url).scheme != "http" or urlparse(url).hostname not in ("127.0.0.1", "localhost", "::1"):
-        raise ValueError("MATCHSHIFT_LOCAL_URL must be a local HTTP endpoint")
+    config = get_local_config()
     agent = Agent(
         client=OpenAIChatCompletionClient(
-            base_url=url, api_key="local",
-            model=os.getenv("MATCHSHIFT_LOCAL_MODEL", "phi-4-mini"),
+            base_url=config.base_url, api_key="local",
+            model=config.model,
         ),
         name="AudienceStyleAgent",
         instructions=(
@@ -99,7 +95,7 @@ async def choose_style_with_foundry_local(analysis: Analysis, audience: str) -> 
     return result.text.strip().strip("\x60").lower()
 
 
-@step(name="NarrativeDirector")
+@step(name="NarrativeDirector", replay_key=lambda analysis: f"{analysis.seed}:{analysis.insight_id}")
 async def narrative_director(analysis: Analysis) -> DirectorDecision:
     if inference_mode() == "deterministic":
         return DirectorDecision(analysis=analysis, angle=PREFERRED[analysis.kind],
@@ -114,7 +110,7 @@ async def narrative_director(analysis: Analysis) -> DirectorDecision:
                                 source="fallback", note="Local inference unavailable; safe fallback")
 
 
-@step(name="EvidenceVerifier")
+@step(name="EvidenceVerifier", replay_key=lambda decision: f"{decision.analysis.seed}:{decision.analysis.insight_id}:{decision.source}:{decision.angle}")
 async def evidence_verifier(decision: DirectorDecision) -> Verification:
     analysis = decision.analysis
     expected = next(
@@ -137,7 +133,7 @@ async def evidence_verifier(decision: DirectorDecision) -> Verification:
     return Verification(decision=decision, approved=True, reason="Claims, timestamps and event IDs revalidated")
 
 
-@step(name="AudienceAgent")
+@step(name="AudienceAgent", replay_key=lambda verification, audience: f"{verification.decision.analysis.seed}:{verification.decision.analysis.insight_id}:{audience}:{verification.decision.source}:{verification.decision.angle}")
 async def audience_agent(verification: Verification, audience: str) -> StoryResponse:
     if not verification.approved:
         raise ValueError("Refusing to broadcast an unverified insight")

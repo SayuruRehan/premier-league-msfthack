@@ -49,3 +49,50 @@ On success the script writes `artifacts/foundry-local-probe.json`. It includes t
 - **Apple Intel macOS:** The Homebrew instructions above explicitly target Apple Silicon, not Intel Macs; use a supported machine or keep the already working free deterministic route.
 
 Even after successful local validation, **the public Azure demo still uses precomputed deterministic stories**. It is not a hosted generative endpoint and should not be described as such.
+
+## Phase 1 — verify the served local endpoint (no model inference)
+
+Microsoft's CLI supports directly loading a model and starting the daemon, and the Agent Framework's `OpenAIChatCompletionClient` supports the same `/v1/chat/completions` surface.
+
+```sh
+foundry model list --type chat
+foundry model info phi-4-mini
+foundry model download phi-4-mini
+foundry server start --port 39839 --idle-timeout 0
+foundry model load phi-4-mini
+foundry server status
+foundry model list --loaded
+```
+
+If you already have a running daemon, use `foundry server restart --port 39839 --idle-timeout 0` instead of `start`. The port `39839` is an optional fixed-port example; read the actual service URL from `foundry server status`.
+
+Then configure the **actual** local endpoint and model ID (not necessarily the alias):
+
+```sh
+python -m pip install -r services/api/requirements-local.txt
+export MATCHSHIFT_LOCAL_URL=http://127.0.0.1:39839/v1/
+export MATCHSHIFT_LOCAL_MODEL=phi-4-mini
+python -m scripts.check_foundry_endpoint
+```
+
+The diagnostic requests `GET /v1/models` over **loopback HTTP only** and prints the server-advertised model IDs. If the alias isn't advertised, set `MATCHSHIFT_LOCAL_MODEL` to a listed served ID and re-run. The service may take time to load the model. No API key or paid Azure resource is required.
+
+## Phase 2 — validate the actual model decisions
+
+```sh
+export MATCHSHIFT_INFERENCE=foundry_local
+python -m scripts.probe_foundry_local --seed 7 --audience broadcast
+```
+
+The full Microsoft Agent Framework workflow should select an allowed narrative angle and audience style through **two local HTTP chat-completion requests**, then verify its claims. The probe **fails** if either agent falls back. Record the measured latency and accepted decisions, and capture the local `foundry server status` and `foundry model list --loaded` as separate evidence of the serving runtime.
+
+The CLI must be run on your own supported computer. An arbitrary custom server can imitate `/v1/models` and `/v1/chat/completions`; **these endpoint tests alone cannot cryptographically attest model identity or prove hardware execution**. Check the running Foundry process and loaded model separately before describing it as genuine Phi inference.
+
+## Automated integration coverage (CI)
+
+Our isolated GitHub Actions `foundry_transport` job runs the **real Microsoft Agent Framework `Agent` objects and `OpenAIChatCompletionClient` network transport** against a temporary OpenAI-compatible stub server bound to `127.0.0.1`. It checks `GET /v1/models`, both specialist requests, typed role outputs, evidence verification, and allowlisted decisions. The stub clearly identifies itself as `phi-test-stub`.
+
+**A green CI transport job is proof of client/protocol compatibility, not real Phi weights or Foundry Local running in GitHub Actions.**
+
+Docs: https://learn.microsoft.com/en-us/azure/foundry-local/reference/reference-cli
+and https://learn.microsoft.com/en-us/agent-framework/hosting/self-hosting/openai-endpoints
