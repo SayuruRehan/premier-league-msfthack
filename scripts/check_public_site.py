@@ -54,6 +54,20 @@ def validate_content(index_html: str, replay: dict, stories: dict) -> dict:
     return {"events":len(events),"insights":len(insights),"cues":len(replay["cues"]),"stories":len(stories)}
 
 
+def validate_trust_demo(lab: dict, replay: dict) -> dict:
+    """Validate the published *simulated* recovery evidence without a local model."""
+    from packages.analytics.insights import generate_insights
+    from packages.simulator.generator import generate_events
+    from scripts.trust_lab import validate_trust_lab
+
+    seed = int(replay["match_id"].split("-")[-1])
+    if lab.get("seed") != seed:
+        raise ValueError("Published trust lab does not match published replay")
+    expected = {i.id: i for i in generate_insights(generate_events(seed))}
+    validate_trust_lab(lab, expected)
+    return {"failure_scenarios": len(lab["cases"])}
+
+
 def fetch_text(url: str) -> str:
     request=Request(url, headers={"User-Agent": "MatchShift-public-smoke/1.0", "Accept": "*/*"})
     with urlopen(request,timeout=20) as response:
@@ -62,7 +76,10 @@ def fetch_text(url: str) -> str:
         return response.read(3_000_000).decode("utf-8")
 
 
-def check_public_site(base_url: str, attempts: int = 8, retry_seconds: float = 7) -> dict:
+def check_public_site(
+    base_url: str, attempts: int = 8, retry_seconds: float = 7,
+    require_trust_lab: bool = False,
+) -> dict:
     parts = urlsplit(base_url)
     if parts.scheme != "https" or not parts.netloc or parts.username or parts.password:
         raise ValueError("Public URL must be a valid HTTPS site URL")
@@ -73,7 +90,11 @@ def check_public_site(base_url: str, attempts: int = 8, retry_seconds: float = 7
             index=fetch_text(root)
             replay=json.loads(fetch_text(urljoin(root,"data/replay.json")))
             stories=json.loads(fetch_text(urljoin(root,"data/stories.json")))
-            return validate_content(index,replay,stories)
+            stats=validate_content(index,replay,stories)
+            if require_trust_lab:
+                trust_lab=json.loads(fetch_text(urljoin(root,"data/trust_lab.json")))
+                stats.update(validate_trust_demo(trust_lab,replay))
+            return stats
         except (ValueError,KeyError,AssertionError,URLError,HTTPError,UnicodeDecodeError,TypeError,TimeoutError) as exc:
             error=exc
             print(f"Attempt {attempt}/{attempts}: public-site verification not ready: {exc}",flush=True)
@@ -87,10 +108,12 @@ def main() -> None:
     parser.add_argument("--url", required=True)
     parser.add_argument("--attempts",type=int,default=8)
     parser.add_argument("--retry-seconds",type=float,default=7)
+    parser.add_argument("--require-trust-lab", action="store_true",
+                        help="Validate published model-failure simulations as well")
     args=parser.parse_args()
     if args.attempts<1 or args.retry_seconds<0:
         parser.error("Attempts must be positive and retry interval nonnegative")
-    stats=check_public_site(args.url,args.attempts,args.retry_seconds)
+    stats=check_public_site(args.url,args.attempts,args.retry_seconds,args.require_trust_lab)
     print(f"PASS: publicly served demo verified: {stats}")
 
 

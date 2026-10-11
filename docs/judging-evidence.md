@@ -34,3 +34,7 @@ Azure Static Web Apps is a legitimate hero technology for hosting, but there are
 3. Capture an original, compelling under-two-minute video, and test the public link in an incognito browser.
 4. Preserve Azure Free tier and maintain the public URL through the judging period.
 5. Ensure synthetic scenario and generated outputs are not described as live licensed match analysis.
+
+## Public failure-recovery demonstration (Milestone 8)
+
+The production build now exports `trust_lab.json` with **three explicitly simulated provider responses** and their **real Agent Framework execution traces**. Judges can inspect verifier rejection, bounded re-check, fallback on model unavailability, and audience-style validation, with final copy remaining grounded in exact match evidence. The scenarios are developer-controlled tests, **not live Phi calls or empirically observed production incidents**.
