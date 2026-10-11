@@ -52,3 +52,44 @@ jobs:
           test -s apps/web/dist/data/replay.json
           test -s apps/web/dist/data/stories.json
           grep -q './assets/' apps/web/dist/index.html
+
+      - name: Install headless Chromium
+        run: npx playwright install --with-deps chromium
+        working-directory: apps/web
+      - name: Start standalone public-site preview
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4173 >/tmp/matchshift-preview.log 2>&1 &
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then
+              echo "Public offline preview is ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/matchshift-preview.log
+          exit 1
+        working-directory: apps/web
+      - name: Verify judge experience in desktop and mobile browsers
+        run: npm run test:e2e
+        working-directory: apps/web
+      - name: Retain browser failure screenshots and traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: matchshift-playwright-diagnostics
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
+          if-no-files-found: ignore
+
+  public_azure:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify current public Azure production site from GitHub runner
+        run: python -m scripts.check_public_site --url https://jolly-bay-020154010.1.azurestaticapps.net --attempts 6 --retry-seconds 8

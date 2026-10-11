@@ -63,3 +63,13 @@ The preview should load replay and agent results entirely from built JSON, witho
 ## What remains genuinely live?
 
 Run FastAPI and the React dev server locally for interactive Microsoft Agent Framework execution on each story request. To use a local Phi model, see `docs/agents.md`; verify that environment separately. The judge-hosted static site shows saved outputs of the **real deterministic** framework runs. It does not claim that inference was executed at viewer request time.
+
+## Automated release verification (post-deployment gate)
+
+After the Azure upload completes, the workflow calls `python -m scripts.check_public_site` against the **public HTTPS production domain**, retrying briefly to account for Azure CDN propagation.
+
+The smoke checker downloads `/`, `/data/replay.json` and `/data/stories.json` without authentication. It verifies all cues, model provenance, all persona stories, and complete real Microsoft Agent Framework stage traces. A broken live deployment now causes the **deployment workflow to fail** instead of leaving a misleading green check.
+
+The regular `CI` workflow also runs Playwright Chromium scenarios against the *locally served, compiled static artifact*, in desktop and mobile viewports. The tests cover match cues, evidence drilldown, persona modes, and player controls, and ensure the static build makes no backend/AI calls. On browser failure, Actions retains screenshots and traces as a downloadable artifact.
+
+If Azure's URL ever changes, update `MATCHSHIFT_PUBLIC_URL` in `.github/workflows/deploy-azure-static.yml` before deploying the next version. The URL is public; **never** put the deployment token into the smoke command.

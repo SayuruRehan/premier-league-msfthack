@@ -42,6 +42,12 @@ jobs:
           app_location: apps/web/dist
           output_location: ''
           skip_app_build: true
+      - name: Verify actual public Azure endpoint and verified stories
+        if: ${{ env.SWA_DEPLOYMENT_TOKEN != '' }}
+        env:
+          MATCHSHIFT_PUBLIC_URL: https://jolly-bay-020154010.1.azurestaticapps.net
+        run: |
+          python -m scripts.check_public_site --url "$MATCHSHIFT_PUBLIC_URL" --attempts 10 --retry-seconds 8
       - name: Explain missing Azure setup
         if: ${{ env.SWA_DEPLOYMENT_TOKEN == '' }}
         run: echo "Built and verified the offline demo. Azure publishing skipped until AZURE_STATIC_WEB_APPS_API_TOKEN is configured."
