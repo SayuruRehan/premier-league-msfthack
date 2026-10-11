@@ -93,3 +93,9 @@ The workflow `.github/workflows/deploy-azure-static.yml` builds and validates th
 The public demo includes an interactive **Agent Trust Lab** explaining what happens when the Narrative Director suggests an unsupported claim, when the inference provider fails, or when the Audience Agent receives an invalid presentation style. Each case is **precomputed through the real Microsoft Agent Framework workflow with controlled test stubs, not a real Phi/LLM call**. It shows the actual workflow trace, rejection/fallback status and safe verified final narration.
 
 Run `python -m scripts.export_static` to generate `data/trust_lab.json` alongside the normal offline replay and persona stories. Unit tests and post-deployment verification check the scenarios. **Do not present these controlled simulations as actual online attacks or measured model hallucination rates.**
+
+## Foundry Local transport compatibility and real-model proof
+
+Run `python -m scripts.check_foundry_endpoint` with `MATCHSHIFT_LOCAL_URL` and `MATCHSHIFT_LOCAL_MODEL` configured to confirm that a **local** OpenAI-compatible server exposes the desired model. Run the existing fail-closed `python -m scripts.probe_foundry_local` to verify both role decisions through the full workflow.
+
+CI has a separate **foundry_transport** job invoking real Agent Framework clients against a controlled loopback HTTP stub; it never uses or claims real Phi inference. For actual hardware/CLI verification, see `docs/foundry-local-validation.md`.

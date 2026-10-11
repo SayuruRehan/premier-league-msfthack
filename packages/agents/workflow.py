@@ -8,7 +8,7 @@ workflow retries once with a safe deterministic decision. No cloud calls occur.
 """
 import asyncio
 import os
-from urllib.parse import urlparse
+from .local_endpoint import get_local_config
 
 from agent_framework import workflow, step
 from packages.analytics.insights import generate_insights
@@ -47,12 +47,10 @@ async def choose_with_foundry_local(analysis: Analysis) -> str:
     from agent_framework import Agent
     from agent_framework.openai import OpenAIChatCompletionClient
 
-    url = os.getenv("MATCHSHIFT_LOCAL_URL", "http://127.0.0.1:5273/v1/")
-    if urlparse(url).scheme != "http" or urlparse(url).hostname not in ("127.0.0.1", "localhost", "::1"):
-        raise ValueError("MATCHSHIFT_LOCAL_URL must be a local HTTP endpoint")
+    config = get_local_config()
     client = OpenAIChatCompletionClient(
-        base_url=url, api_key="local",
-        model=os.getenv("MATCHSHIFT_LOCAL_MODEL", "phi-4-mini"),
+        base_url=config.base_url, api_key="local",
+        model=config.model,
     )
     agent = Agent(
         client=client,
@@ -77,13 +75,11 @@ async def choose_style_with_foundry_local(analysis: Analysis, audience: str) -> 
     from agent_framework import Agent
     from agent_framework.openai import OpenAIChatCompletionClient
 
-    url = os.getenv("MATCHSHIFT_LOCAL_URL", "http://127.0.0.1:5273/v1/")
-    if urlparse(url).scheme != "http" or urlparse(url).hostname not in ("127.0.0.1", "localhost", "::1"):
-        raise ValueError("MATCHSHIFT_LOCAL_URL must be a local HTTP endpoint")
+    config = get_local_config()
     agent = Agent(
         client=OpenAIChatCompletionClient(
-            base_url=url, api_key="local",
-            model=os.getenv("MATCHSHIFT_LOCAL_MODEL", "phi-4-mini"),
+            base_url=config.base_url, api_key="local",
+            model=config.model,
         ),
         name="AudienceStyleAgent",
         instructions=(
